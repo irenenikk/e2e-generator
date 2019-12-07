@@ -31,12 +31,10 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
 
 def loss_function(real, pred):
   loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')      
-  mask = tf.math.logical_not(tf.math.equal(real, 0))
   loss_ = loss_object(real, pred)
-
+  mask = tf.math.logical_not(tf.math.equal(real, 0))
   mask = tf.cast(mask, dtype=loss_.dtype)
   loss_ *= mask
-
   return tf.reduce_mean(loss_)
 
 @tf.function
@@ -67,16 +65,16 @@ if __name__ == '__main__':
         print('Please give path to data file as argument')
         exit()
     data_file = sys.argv[1]
-    print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
-    print('Creating dataset')
+    #print('Loading data')
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_examples=1000)
+    #print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
                                                                 batch_size=BATCH_SIZE, 
                                                                 embedding_dim=embedding_dim, 
                                                                 units=units, 
                                                                 test_size=0.2)
-    print('Saving training information')
+    #print('Saving training information')
     max_length_targ, max_length_inp = max_length(target_tensor), max_length(input_tensor)
     # save training info to use in analysis
     save_training_info(ref_word2idx, 
@@ -98,7 +96,7 @@ if __name__ == '__main__':
                                     decoder=decoder)
     print('Starting training')
     #train
-    EPOCHS = 2
+    EPOCHS = 10
     s = time.time()
     for epoch in range(EPOCHS):
         start = time.time()
@@ -115,4 +113,3 @@ if __name__ == '__main__':
         print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
     print('Training took', (time.time() - s)/60, 'minutes')
-

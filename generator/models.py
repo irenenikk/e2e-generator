@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
+from IPython.core.debugger import set_trace
 
 class Encoder(tf.keras.Model):
   """ The encoder is a bidirectional LSTM as in the winning system by Jurafsky et al. """
@@ -35,7 +36,12 @@ class BahdanauAttention(layers.Layer):
     # hidden is two dimensional, storing both hidden states and memory
     # only use the hidden state when calculating attention
     # it has to be expanded because the output contains time axis information
-    hidden_with_time_axis = tf.expand_dims(hidden[0], 1)
+    #set_trace()
+    print(hidden[-1])
+    hidden_with_time_axis = tf.expand_dims(hidden[-1], 1)
+    print('hidden in attention', hidden[-1])
+    print('output ', output.shape)
+    print('hidden_with_time_axis', hidden_with_time_axis.shape)
     score = self.V(tf.nn.tanh(self.W1(output) + self.W2(hidden_with_time_axis)))
     attention_weights = tf.nn.softmax(score, axis=1)
     context_vector = attention_weights * output
@@ -49,31 +55,23 @@ class Decoder(tf.keras.Model):
     super(Decoder, self).__init__()
     self.batch_sz = batch_sz
     self.hidden_size = hidden_size
+    self.num_layers = num_layers
     self.embedding_dim = embedding_dim
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
-    lstm_cell = layers.LSTMCell(hidden_size)
-    self.num_layers = num_layers
-    self.lstm_cells = layers.StackedRNNCells([lstm_cell] * num_layers)
-    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_state=True)
-    self.lstm = tf.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+    self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
+    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.fc = layers.Dense(vocab_size, activation='softmax')
     # used for attention
     self.attention = BahdanauAttention(hidden_size)
 
   def call(self, x, hidden, enc_output):
     context_vector, attention_weights = self.attention(hidden, enc_output)
-    #print('x as input ', x.shape)
-    #print('context', context_vector.shape)
     x = self.embedding(x)
-    #print('x as embedding', x.shape)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    #output, state = self.rnn(x, initial_state=[hidden]*self.num_layers)
-    output, state_h, state_c = self.lstm(x, initial_state=hidden)
-    # output shape == (batch_size * 1, hidden_size)
+    output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
     output = tf.reshape(output, (-1, output.shape[2]))
-    # output shape == (batch_size, vocab)
     x = self.fc(output)
-    #print('output', x.shape)
-    return x, [state_h, state_c], attention_weights
+    # return the last state
+    return x, states[-1], attention_weights
