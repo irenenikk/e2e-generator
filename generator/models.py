@@ -1,75 +1,79 @@
 import tensorflow as tf
-from tf.compat.v2.keras.layers import Bidirectional
+from tensorflow.keras import layers
 
 class Encoder(tf.keras.Model):
-  def __init__(self, vocab_size, embedding_dim, enc_units, batch_size):
+  """ The encoder is a bidirectional LSTM as in the winning system by Jurafsky et al. """
+  def __init__(self, vocab_size, embedding_dim, hidden_size, batch_size):
     super(Encoder, self).__init__()
     self.batch_size = batch_size
-    self.enc_units = enc_units
-    self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+    self.hidden_size = hidden_size
+    self.embedding = layers.Embedding(vocab_size, embedding_dim)
     # use a bidirectional lstm
-    self.forward_lstm = tf.keras.layers.LSTM(num_hidden)
-    # Backward direction cell
-    self.backward_lstm = tf.keras.layers.LSTM(num_hidden)
-
+    lstm_layer = layers.LSTM(hidden_size, 
+                            return_sequences=True, 
+                            return_state=True)
+    self.bidirectional_lstm = layers.Bidirectional(lstm_layer)
 
   def call(self, x, hidden):
     x = self.embedding(x)
-    rnn.static_bidirectional_rnn(self.forward, self.backward, x)    
-    return output, state
+    output, forward_hidden, forward_mem, backward_hidden, backward_mem = self.bidirectional_lstm(x, initial_state=hidden)
+    return output, forward_hidden, forward_mem, backward_hidden, backward_mem
 
   def initialize_hidden_state(self):
-    return tf.zeros((self.batch_size, self.enc_units))
+    forward_state = [tf.zeros([self.batch_size, self.hidden_size])] * 2
+    backward_state = [tf.zeros([self.batch_size, self.hidden_size])] * 2
+    return forward_state + backward_state
 
-class BahdanauAttention(tf.keras.layers.Layer):
+class BahdanauAttention(layers.Layer):
   def __init__(self, units):
     super(BahdanauAttention, self).__init__()
-    self.W1 = tf.keras.layers.Dense(units)
-    self.W2 = tf.keras.layers.Dense(units)
-    self.V = tf.keras.layers.Dense(1)
+    self.W1 = layers.Dense(units)
+    self.W2 = layers.Dense(units)
+    self.V = layers.Dense(1)
 
-  def call(self, query, values):
-    # hidden shape == (batch_size, hidden size)
-    # hidden_with_time_axis shape == (batch_size, 1, hidden size)
-    # we are doing this to perform addition to calculate the score
-    hidden_with_time_axis = tf.expand_dims(query, 1)
-    # score shape == (batch_size, max_length, 1)
-    # we get 1 at the last axis because we are applying score to self.V
-    # the shape of the tensor before applying self.V is (batch_size, max_length, units)
-    score = self.V(tf.nn.tanh(
-        self.W1(values) + self.W2(hidden_with_time_axis)))
-    # attention_weights shape == (batch_size, max_length, 1)
+  def call(self, hidden, output):
+    # hidden is two dimensional, storing both hidden states and memory
+    # only use the hidden state when calculating attention
+    # it has to be expanded because the output contains time axis information
+    hidden_with_time_axis = tf.expand_dims(hidden[0], 1)
+    score = self.V(tf.nn.tanh(self.W1(output) + self.W2(hidden_with_time_axis)))
     attention_weights = tf.nn.softmax(score, axis=1)
-    # context_vector shape after sum == (batch_size, hidden_size)
-    context_vector = attention_weights * values
+    context_vector = attention_weights * output
     context_vector = tf.reduce_sum(context_vector, axis=1)
     return context_vector, attention_weights
 
 class Decoder(tf.keras.Model):
-  def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz):
+  """ Jurafsky et al's decoder is a 4-layer RNN with 512 LSTM cells. 
+      In order to use the concatented forward and backward states from the encoder, I've doubled the amount of cells in the decoder. """
+  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, batch_sz):
     super(Decoder, self).__init__()
     self.batch_sz = batch_sz
-    self.dec_units = dec_units
-    self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
-    self.gru = tf.keras.layers.GRU(self.dec_units,
-                                   return_sequences=True,
-                                   return_state=True,
-                                   recurrent_initializer='glorot_uniform')
-    self.fc = tf.keras.layers.Dense(vocab_size)
+    self.hidden_size = hidden_size
+    self.embedding_dim = embedding_dim
+    self.embedding = layers.Embedding(vocab_size, embedding_dim)
+    lstm_cell = layers.LSTMCell(hidden_size)
+    self.num_layers = num_layers
+    self.lstm_cells = layers.StackedRNNCells([lstm_cell] * num_layers)
+    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_state=True)
+    self.lstm = tf.keras.layers.LSTM(self.hidden_size, return_sequences=True, return_state=True)
+    self.fc = layers.Dense(vocab_size, activation='softmax')
     # used for attention
-    self.attention = BahdanauAttention(self.dec_units)
+    self.attention = BahdanauAttention(hidden_size)
 
   def call(self, x, hidden, enc_output):
-    # enc_output shape == (batch_size, max_length, hidden_size)
     context_vector, attention_weights = self.attention(hidden, enc_output)
-    # x shape after passing through embedding == (batch_size, 1, embedding_dim)
+    #print('x as input ', x.shape)
+    #print('context', context_vector.shape)
     x = self.embedding(x)
-    # x shape after concatenation == (batch_size, 1, embedding_dim + hidden_size)
+    #print('x as embedding', x.shape)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
-    # passing the concatenated vector to the GRU
-    output, state = self.gru(x)
+    # initialize decoder with the encoder hidden state
+    # and give encoded output as input
+    #output, state = self.rnn(x, initial_state=[hidden]*self.num_layers)
+    output, state_h, state_c = self.lstm(x, initial_state=hidden)
     # output shape == (batch_size * 1, hidden_size)
     output = tf.reshape(output, (-1, output.shape[2]))
     # output shape == (batch_size, vocab)
     x = self.fc(output)
-    return x, state, attention_weights
+    #print('output', x.shape)
+    return x, [state_h, state_c], attention_weights

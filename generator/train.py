@@ -8,11 +8,13 @@ import time
 import os
 import pickle
 import json
+import ipdb;
 
 BATCH_SIZE = 64
-embedding_dim = 256
-units = 1024
+embedding_dim = 128
+units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
+DECODER_NUM_LAYERS = 4
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
     training_info = {}
@@ -28,6 +30,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
         pickle.dump(training_info, f)
 
 def loss_function(real, pred):
+  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')      
   mask = tf.math.logical_not(tf.math.equal(real, 0))
   loss_ = loss_object(real, pred)
 
@@ -40,13 +43,19 @@ def loss_function(real, pred):
 def train_step(inp, targ, enc_hidden, ref_word2idx):
   loss = 0
   with tf.GradientTape() as tape:
-    enc_output, enc_hidden = encoder(inp, enc_hidden)
-    dec_hidden = enc_hidden
+    enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
+    #forward_hidden = tf.unstack(forward_hidden, axis=1)
+    #backward_hidden = tf.unstack(backward_hidden, axis=1)
+    # initialize using the mean of forward and backward states
+    state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
+    dec_hidden = [state_h, state_c]
     dec_input = tf.expand_dims([ref_word2idx['sssss']] * BATCH_SIZE, 1)
     for t in range(1, targ.shape[1]):
-      predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
+      predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
+      # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
-      dec_input = predictions
+      dec_input = tf.expand_dims(tf.argmax(predictions, axis=1), 1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -69,6 +78,7 @@ if __name__ == '__main__':
                                                                 test_size=0.2)
     print('Saving training information')
     max_length_targ, max_length_inp = max_length(target_tensor), max_length(input_tensor)
+    # save training info to use in analysis
     save_training_info(ref_word2idx, 
                         ref_idx2word, 
                         mr_word2idx, 
@@ -78,9 +88,8 @@ if __name__ == '__main__':
                         embedding_dim,
                         units)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units, BATCH_SIZE)
-    decoder = Decoder(len(ref_word2idx)+1, embedding_dim, units, BATCH_SIZE)
+    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE)
     optimizer = tf.keras.optimizers.Adam()
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
     # prepare to train
     checkpoint_dir = './training_checkpoints'
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
@@ -89,7 +98,7 @@ if __name__ == '__main__':
                                     decoder=decoder)
     print('Starting training')
     #train
-    EPOCHS = 5
+    EPOCHS = 2
     s = time.time()
     for epoch in range(EPOCHS):
         start = time.time()
