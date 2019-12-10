@@ -12,4 +12,4 @@ The final goal of the project is to explore the task of content selection, that 
 
 ## Codebse
 
-The code is based on this [tutorial](https://www.tensorflow.org/tutorials/text/nmt_with_attention). However, since the architecture and the use case are different, it has significanlty evolved. The implementation for attention and the training loop have remained the same.
+The code is based on this [tutorial](https://www.tensorflow.org/tutorials/text/nmt_with_attention), for which the code is licensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0). However, since the architecture and the use case are different, it has significanlty evolved. The implementation for attention and the training loop have remained the same.
