@@ -10,8 +10,6 @@ import os
 import pickle
 
 BATCH_SIZE = 64
-EMBEDDING_DIM = 256
-UNITS = 1024
 
 def evaluate(encoder, decoder, mr_info, training_info):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
@@ -24,9 +22,11 @@ def evaluate(encoder, decoder, mr_info, training_info):
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
     result = ''
-    hidden = [tf.zeros((1, training_info['units']))]
-    enc_out, enc_hidden = encoder(inputs, hidden)
-    dec_hidden = enc_hidden
+    hidden = [tf.zeros((1, training_info['units']))]*4
+    enc_out, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inputs, hidden)
+    state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
+    dec_hidden = [state_h, state_c]
     dec_input = tf.expand_dims([training_info['ref_word2idx']['sssss']], 0)
     for t in range(training_info['max_length_targ']):
         predictions, dec_hidden, attention_weights = decoder(dec_input,
@@ -55,10 +55,9 @@ def plot_attention(attention, sentence, predicted_sentence):
 
 def generate_reference(encoder, decoder, sentence, training_info):
     result, mr_info, attention_plot = evaluate(encoder, decoder, sentence, training_info)
-    print('MRs: %s' % (sentence))
-    print('Predicted reference text: {}'.format(result))
-    attention_plot = attention_plot[:len(result.split(' ')), :len(sentence.split(' '))]
+    #attention_plot = attention_plot[:len(result.split(' ')), :len(sentence.split(' '))]
     #plot_attention(attention_plot, sentence.split(' '), result.split(' '))
+    return result
 
 def load_training_info(training_info_file):
     with open(training_info_file, 'rb') as f:
@@ -73,9 +72,9 @@ if __name__ == "__main__":
     test_data_file = sys.argv[2]
     training_info_file = 'training_info.pkl' if len(sys.argv) < 4 else sys.argv[3]
     training_info = load_training_info(training_info_file)
-    encoder = Encoder(len(training_info['mr_word2idx'])+1, EMBEDDING_DIM, UNITS, BATCH_SIZE)
-    decoder = Decoder(len(training_info['ref_word2idx'])+1, EMBEDDING_DIM, UNITS, BATCH_SIZE)
-    optimizer = tf.keras.optimizers.Adam()    
+    encoder = Encoder(len(training_info['mr_word2idx'])+1, training_info['embedding_dim'], training_info['units'], BATCH_SIZE)
+    decoder = Decoder(len(training_info['ref_word2idx'])+1, 4, training_info['embedding_dim'], training_info['units']*2, BATCH_SIZE)
+    optimizer = tf.keras.optimizers.Adam()
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,
                                     decoder=decoder)
@@ -85,6 +84,5 @@ if __name__ == "__main__":
     for i in range(len(test_data)):
         generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
         print(test_data['mr'].iloc[i])
-        print(test_data['ref'].iloc[i])
         print(generated)
         print('------------')

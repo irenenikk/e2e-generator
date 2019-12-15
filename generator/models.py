@@ -36,12 +36,7 @@ class BahdanauAttention(layers.Layer):
     # hidden is two dimensional, storing both hidden states and memory
     # only use the hidden state when calculating attention
     # it has to be expanded because the output contains time axis information
-    #set_trace()
-    print(hidden[-1])
     hidden_with_time_axis = tf.expand_dims(hidden[-1], 1)
-    print('hidden in attention', hidden[-1])
-    print('output ', output.shape)
-    print('hidden_with_time_axis', hidden_with_time_axis.shape)
     score = self.V(tf.nn.tanh(self.W1(output) + self.W2(hidden_with_time_axis)))
     attention_weights = tf.nn.softmax(score, axis=1)
     context_vector = attention_weights * output

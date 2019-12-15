@@ -24,18 +24,18 @@ def load_data_tensors(data_file, num_examples=None):
     return input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word
 
 def load_text_data(data_file, num_examples=None):
-    """ Load text data, preprocess and return as a dataframe. """
+    """ Load text data and return as a dataframe. """
     raw_data = pd.read_csv(data_file)
     if num_examples is not None: 
         raw_data = raw_data.head(num_examples)
     # and start and end tags to data
     data_columns = build_slot_columns(raw_data)
     data = pd.concat([raw_data, data_columns], axis=1)
-    data = preprocess_data(data)
     return data
 
 def tiny_analysis(data):
-    for column in data.columns:
+    columns = [col for col in data.columns if col not in ['ref', 'mr']]
+    for column in columns:
         print('Unique values in slot', column, ':', data[column].unique(), '(', data[column].nunique(), ')')
 
 def max_length(tensor):

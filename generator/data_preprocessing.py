@@ -60,6 +60,7 @@ def preprocess_data(data):
 
 def build_slot_columns(data):
     """ Build a dataframe with each slot as a column. """
+    data.columns = map(str.lower, data.columns)
     slot_infos = data['mr'].apply(get_slots).values
     # get all possible slots from data
     all_slots = set([key for d in slot_infos for key in d.keys()])

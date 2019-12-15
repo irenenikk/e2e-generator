@@ -8,7 +8,7 @@ import time
 import os
 import pickle
 import json
-import ipdb;
+import ipdb
 
 BATCH_SIZE = 64
 embedding_dim = 128
@@ -16,7 +16,7 @@ units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 4
 
-def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
+def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
     training_info['ref_word2idx'] = ref_word2idx
     training_info['ref_idx2word'] = ref_idx2word
@@ -25,6 +25,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
     training_info['max_length_targ'] = max_length_targ
     training_info['max_length_inp'] = max_length_inp
     training_info['embedding_dim'] = embedding_dim
+    training_info['decoder_layers'] = decoder_layers
     training_info['units'] = units
     with open(TRAINING_INFO_FILE, 'wb') as f:
         pickle.dump(training_info, f)
@@ -42,9 +43,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx):
   loss = 0
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
-    #forward_hidden = tf.unstack(forward_hidden, axis=1)
-    #backward_hidden = tf.unstack(backward_hidden, axis=1)
-    # initialize using the mean of forward and backward states
+    # initialize using the concatenated forward and backward states
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
     dec_hidden = [state_h, state_c]
@@ -65,16 +64,16 @@ if __name__ == '__main__':
         print('Please give path to data file as argument')
         exit()
     data_file = sys.argv[1]
-    #print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_examples=1000)
-    #print('Creating dataset')
+    print('Loading data')
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
+    print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
                                                                 batch_size=BATCH_SIZE, 
                                                                 embedding_dim=embedding_dim, 
                                                                 units=units, 
                                                                 test_size=0.2)
-    #print('Saving training information')
+    print('Saving training information')
     max_length_targ, max_length_inp = max_length(target_tensor), max_length(input_tensor)
     # save training info to use in analysis
     save_training_info(ref_word2idx, 
@@ -84,7 +83,9 @@ if __name__ == '__main__':
                         max_length_targ, 
                         max_length_inp,
                         embedding_dim,
-                        units)
+                        units,
+                        DECODER_NUM_LAYERS
+                        )
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units, BATCH_SIZE)
     decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE)
     optimizer = tf.keras.optimizers.Adam()
@@ -96,7 +97,7 @@ if __name__ == '__main__':
                                     decoder=decoder)
     print('Starting training')
     #train
-    EPOCHS = 10
+    EPOCHS = 15
     s = time.time()
     for epoch in range(EPOCHS):
         start = time.time()
