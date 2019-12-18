@@ -45,7 +45,8 @@ class BahdanauAttention(layers.Layer):
 
 class Decoder(tf.keras.Model):
   """ Jurafsky et al's decoder is a 4-layer RNN with 512 LSTM cells. 
-      In order to use the concatented forward and backward states from the encoder, I've doubled the amount of cells in the decoder. """
+      In order to use the concatented forward and backward states from the encoder, 
+      we've doubled the amount of cells in the decoder. """
   def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, batch_sz):
     super(Decoder, self).__init__()
     self.batch_sz = batch_sz

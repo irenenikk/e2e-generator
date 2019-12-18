@@ -39,7 +39,7 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 @tf.function
-def train_step(inp, targ, enc_hidden, ref_word2idx):
+def train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob):
   loss = 0
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
@@ -52,7 +52,11 @@ def train_step(inp, targ, enc_hidden, ref_word2idx):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
-      dec_input = tf.expand_dims(tf.argmax(predictions, axis=1), 1)
+      # use teacher forcing stochastically
+      if np.random.uniform() < teacher_force_prob:
+        dec_input = tf.expand_dims(targ[:, t], 1)
+      else:
+        dec_input = tf.expand_dims(tf.argmax(predictions, axis=1), 1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -65,7 +69,7 @@ if __name__ == '__main__':
         exit()
     data_file = sys.argv[1]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
@@ -99,15 +103,18 @@ if __name__ == '__main__':
     #train
     EPOCHS = 15
     s = time.time()
+    teacher_force_prob = 1
     for epoch in range(EPOCHS):
         start = time.time()
         enc_hidden = encoder.initialize_hidden_state()
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx)
+            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, batch, teacher_force_prob)
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
+        if epoch % 5 == 0:
+              teacher_force_prob *= 0.75
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
