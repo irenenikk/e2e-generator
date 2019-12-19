@@ -61,9 +61,13 @@ class Decoder(tf.keras.Model):
     self.attention = BahdanauAttention(hidden_size)
 
   def call(self, x, hidden, enc_output):
+    print('x', x.shape)
     context_vector, attention_weights = self.attention(hidden, enc_output)
     x = self.embedding(x)
-    x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
+    print('x embedding shape ', x.shape)
+    expanded = tf.expand_dims(context_vector, 1)
+    print('expanded shape', expanded.shape)
+    x = tf.concat(expanded, axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
     output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)

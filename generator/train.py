@@ -101,7 +101,7 @@ if __name__ == '__main__':
                                     decoder=decoder)
     print('Starting training')
     #train
-    EPOCHS = 15
+    EPOCHS = 50
     s = time.time()
     teacher_force_prob = 1
     for epoch in range(EPOCHS):
@@ -114,7 +114,7 @@ if __name__ == '__main__':
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
         if epoch % 5 == 0:
-              teacher_force_prob *= 0.75
+              teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
