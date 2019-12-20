@@ -47,7 +47,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob):
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
     dec_hidden = [state_h, state_c]
-    dec_input = tf.expand_dims([ref_word2idx['sssss']] * BATCH_SIZE, 1)
+    dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
