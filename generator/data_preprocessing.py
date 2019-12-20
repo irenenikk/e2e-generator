@@ -49,12 +49,13 @@ def delexicalize(data):
     return data
 
 def add_space_to_punctuation(text):
-    text = re.sub(r"([?.!,¿])", r" \1 ", text)
+    text = re.sub(r"([?.!,:;'\"])", r" \1 ", text)
     return re.sub(r"[' ']+", " ", text)
 
 def preprocess_data(data):
     """ Add start and end tags to reference text and delexicalize. """
-    data['ref'] = data['ref'].apply(lambda x: 'sssss ' + x + ' eeeee')
+    data['ref'] = data['ref'].apply(add_space_to_punctuation)
+    data['ref'] = data['ref'].apply(lambda x: '<start> ' + x + ' <end>')
     data = delexicalize(data)
     return data
 
@@ -74,16 +75,6 @@ def build_slot_columns(data):
             slot_values.append(slot_value)
         mr_slots[slot] = slot_values
     return pd.DataFrame.from_dict(mr_slots)
-
-def get_index_mappings(text, allow_special=False):
-    tokenized = None
-    if allow_special:
-        tokenized = text.split(', ')
-    else:
-        tokenized = re.findall(r'[\w]+|[^\s\w]', text)
-    word2idx = {u:i for i, u in enumerate(sorted(set(tokenized)))}
-    idx2word = {i:u for i, u in enumerate(sorted(set(tokenized)))}
-    return word2idx, idx2word, tokenized
 
 def tokenize(texts):
     text_tokenizer = tf.keras.preprocessing.text.Tokenizer(filters='')

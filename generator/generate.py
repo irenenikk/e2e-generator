@@ -32,23 +32,20 @@ def beam_search(previous_beam, new_predictions, ref_idx2word):
     new_beams = []
     for i in range(len(new_predictions)):
         pred = new_predictions.numpy()[i]
-        print('pred length', len(pred))
+        #print('pred length', len(pred))
         old_beam = previous_beam[i]
-        print('old beam', old_beam)
+        #print('old beam', old_beam)
         # sort in ascending order
         ids_by_prob = np.argsort(-pred)[:BEAM_SIZE]
-        print('most probable ids', ids_by_prob)
+        #print('most probable ids', ids_by_prob)
         words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob]
-        print('most probable words', words_by_prob)
+        #print('most probable words', words_by_prob)
         probs = pred[ids_by_prob]
-        print('ordered probs', probs)
-        #beam_ids += [idd for idd in ids_by_prob[:BEAM_SIZE]]
-        # TODO: move to log-space
-        #beam_probs += [old_prob*prob for prob in probs[:BEAM_SIZE]]
+        #print('ordered probs', probs)
         new_beams += [BeamObj(old_beam.utterance + " " + ref_idx2word[idd], old_beam.probability + np.log(prob), idd) for idd, prob in zip(ids_by_prob, probs) if idd > 0]
-    print('new_beams', new_beams)
+    #print('new_beams', new_beams)
     new_beams.sort(key=lambda x: x.probability, reverse=True)
-    print('new_beams sorted', new_beams)
+    #print('new_beams sorted', new_beams)
     return new_beams[:BEAM_SIZE]
 
 def score_predictions(predictions):
@@ -82,15 +79,17 @@ def evaluate(encoder, decoder, mr_info, training_info):
         attention_plot[t] = attention_weights.numpy()
         # use beam search to keep n best predictions
         beam = beam_search(beam, predictions, training_info['ref_idx2word'])
-        print('beam', beam)
+        #print('beam', beam)
+        for b in beam:
+            if training_info['ref_idx2word'][b.last_id] == 'eeeee':
+                print('FOUND END MARK')
         next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != 'eeeee']
         if next_inputs == []:
-            return score_predictions(result), mr_info, attention_plot
-        print(next_inputs)
+            return beam[0].utterance, mr_info, attention_plot
         # the predicted ID is fed back into the model
         dec_input = np.asarray(next_inputs)
         #dec_input = next_inputs
-    return score_predictions(result), mr_info, attention_plot
+    return beam[0].utterance, mr_info, attention_plot
 
 # function for plotting the attention weights
 def plot_attention(attention, sentence, predicted_sentence):

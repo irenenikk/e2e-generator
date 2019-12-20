@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import sys
-from data_preprocessing import build_slot_columns, preprocess_data, reconstruct_mr, get_index_mappings, tokenize, add_space_to_punctuation
+from data_preprocessing import build_slot_columns, preprocess_data, reconstruct_mr, tokenize, add_space_to_punctuation
 
 def load_data_tensors(data_file, num_examples=None):
     """ Read data from a CSV file, and convert into lookup tensors pointing to tokens in the text. """
