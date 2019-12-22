@@ -89,7 +89,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
         # the predicted ID is fed back into the model
         dec_input = np.asarray(next_inputs)
         #dec_input = next_inputs
-    return beam[0].utterance, mr_info, attention_plot
+    return beam[:3], mr_info, attention_plot
 
 # function for plotting the attention weights
 def plot_attention(attention, sentence, predicted_sentence):

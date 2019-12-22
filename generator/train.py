@@ -11,7 +11,7 @@ import json
 import ipdb
 
 BATCH_SIZE = 64
-embedding_dim = 128
+embedding_dim = 256
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 4
@@ -68,6 +68,7 @@ if __name__ == '__main__':
         print('Please give path to data file as argument')
         exit()
     data_file = sys.argv[1]
+    checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
     input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Creating dataset')
@@ -94,11 +95,13 @@ if __name__ == '__main__':
     decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE)
     optimizer = tf.keras.optimizers.Adam()
     # prepare to train
-    checkpoint_dir = './training_checkpoints'
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,
                                     decoder=decoder)
+    checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+    if tf.train.latest_checkpoint(checkpoint_dir):
+          print('Restoring checkpoint')
     print('Starting training')
     #train
     EPOCHS = 50
