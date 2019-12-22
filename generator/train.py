@@ -10,6 +10,7 @@ import pickle
 import json
 import ipdb
 
+EPOCHS = 100
 BATCH_SIZE = 64
 embedding_dim = 256
 units = 512
@@ -104,7 +105,6 @@ if __name__ == '__main__':
           print('Restoring checkpoint')
     print('Starting training')
     #train
-    EPOCHS = 50
     s = time.time()
     teacher_force_prob = 1
     for epoch in range(EPOCHS):
