@@ -114,7 +114,7 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state()
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):              
-            batch_loss, predictions = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
