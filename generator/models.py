@@ -47,7 +47,7 @@ class Decoder(tf.keras.Model):
   """ Jurafsky et al's decoder is a 4-layer RNN with 512 LSTM cells. 
       In order to use the concatented forward and backward states from the encoder, 
       we've doubled the amount of cells in the decoder. """
-  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, batch_sz):
+  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, batch_sz, training):
     super(Decoder, self).__init__()
     self.batch_sz = batch_sz
     self.hidden_size = hidden_size
@@ -57,12 +57,17 @@ class Decoder(tf.keras.Model):
     self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
     self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.fc = layers.Dense(vocab_size)
+    self.dropout = tf.keras.layers.Dropout(0.5)
     # used for attention
     self.attention = BahdanauAttention(hidden_size)
+    # dropout needs to know if we are training
+    self.training = training
 
   def call(self, x, hidden, enc_output):
+    #print('x', x.shape)
     context_vector, attention_weights = self.attention(hidden[0], enc_output)
     x = self.embedding(x)
+    #print('x embedding', x.shape)
     expanded = tf.expand_dims(context_vector, 1)
     #print('expanded shape', expanded.shape)
     x = tf.concat(expanded, axis=-1)
@@ -71,5 +76,6 @@ class Decoder(tf.keras.Model):
     output, *states = self.rnn(x, initial_state=hidden)
     output = tf.reshape(output, (-1, output.shape[2]))
     x = self.fc(output)
+    x = self.dropout(x, training=self.training)
     # return the last state
     return x, states, attention_weights

@@ -67,7 +67,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
     enc_out, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inputs, hidden)
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = [state_h, state_c]
+    dec_hidden = [[state_h, state_c]]
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
     # TODO: stop only at a stop word
     for t in range(training_info['max_length_targ']):
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     training_info_file = 'training_info.pkl' if len(sys.argv) < 4 else sys.argv[3]
     training_info = load_training_info(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, training_info['embedding_dim'], training_info['units'], BATCH_SIZE)
-    decoder = Decoder(len(training_info['ref_word2idx'])+1, 4, training_info['embedding_dim'], training_info['units']*2, BATCH_SIZE)
+    decoder = Decoder(len(training_info['ref_word2idx'])+1, training_info['decoder_layers'], training_info['embedding_dim'], training_info['units']*2, BATCH_SIZE, training=False)
     optimizer = tf.keras.optimizers.Adam()
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,

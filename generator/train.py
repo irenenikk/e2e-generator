@@ -37,7 +37,7 @@ def loss_function(real, pred):
   mask = tf.math.logical_not(tf.math.equal(real, 0))
   mask = tf.cast(mask, dtype=loss_.dtype)
   loss_ *= mask
-  return tf.reduce_mean(loss_)
+  return tf.reduce_mean(loss_object(real, pred))
 
 @tf.function
 def train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob):
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                         units,
                         DECODER_NUM_LAYERS)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units, BATCH_SIZE)
-    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE)
+    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE, training=True)
     optimizer = tf.keras.optimizers.Adam()
     # prepare to train
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
@@ -114,7 +114,7 @@ if __name__ == '__main__':
             batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob)
             total_loss += batch_loss
             if batch % 100 == 0:
-                print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
+                print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
         #if epoch % 5 == 0:
         #      teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
