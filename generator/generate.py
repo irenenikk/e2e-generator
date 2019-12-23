@@ -79,18 +79,13 @@ def evaluate(encoder, decoder, mr_info, training_info):
         # storing the attention weights to plot later on
         attention_weights = tf.reshape(attention_weights, (-1, ))
         attention_plot[t] = attention_weights.numpy()
-        # use beam search to keep n best predictions
-        beam = beam_search(beam, predictions, training_info['ref_idx2word'])
-        next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
-        #for n in next_inputs:
-        #    print(training_info['ref_idx2word'][n[0]])
-        #print('----')
-        if next_inputs == []:
-            # TODO: rerank final beams
-            return beam[0].utterance, mr_info, attention_plot
+        predicted_id = tf.argmax(predictions[0]).numpy()
+        result += training_info['ref_idx2word'][predicted_id] + ' '
+        if training_info['ref_idx2word'][predicted_id] == '<end>':
+            return result, mr_info, attention_plot
         # the predicted ID is fed back into the model
-        dec_input = np.asarray(next_inputs)
-    return beam[:3], mr_info, attention_plot
+        dec_input = tf.expand_dims([predicted_id], 0)
+    return result, mr_info, attention_plot
 
 # function for plotting the attention weights
 def plot_attention(attention, sentence, predicted_sentence):
