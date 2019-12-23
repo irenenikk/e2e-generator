@@ -75,7 +75,7 @@ class Decoder(tf.keras.Model):
     # and give encoded output as input
     output, *states = self.rnn(x, initial_state=hidden)
     output = tf.reshape(output, (-1, output.shape[2]))
-    x = self.fc(output)
     x = self.dropout(x, training=self.training)
+    x = self.fc(output, softmax)
     # return the last state
     return x, states, attention_weights

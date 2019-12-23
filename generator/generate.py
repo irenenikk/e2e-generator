@@ -32,15 +32,17 @@ def beam_search(previous_beam, new_predictions, ref_idx2word):
     new_beams = []
     for i in range(len(new_predictions)):
         pred = new_predictions.numpy()[i]
+        print(pred)
         #print('pred length', len(pred))
         old_beam = previous_beam[i]
         #print('old beam', old_beam)
         # sort in ascending order
         ids_by_prob = np.argsort(-pred)[:BEAM_SIZE]
         #print('most probable ids', ids_by_prob)
-        words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob]
+        words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob if idd != 0]
         #print('most probable words', words_by_prob)
         probs = pred[ids_by_prob]
+        #print(probs)
         #print('ordered probs', probs)
         new_beams += [BeamObj(old_beam.utterance + " " + ref_idx2word[idd], old_beam.probability + np.log(prob), idd) for idd, prob in zip(ids_by_prob, probs) if idd > 0]
     #print('new_beams', new_beams)
