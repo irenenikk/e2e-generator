@@ -76,6 +76,6 @@ class Decoder(tf.keras.Model):
     output, *states = self.rnn(x, initial_state=hidden)
     output = tf.reshape(output, (-1, output.shape[2]))
     x = self.dropout(x, training=self.training)
-    x = self.fc(output, softmax)
+    x = self.fc(output)
     # return the last state
     return x, states, attention_weights

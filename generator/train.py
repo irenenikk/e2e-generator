@@ -32,7 +32,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
         pickle.dump(training_info, f)
 
 def loss_function(real, pred):
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False, reduction='none')
+  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   loss_ = loss_object(real, pred)
   mask = tf.math.logical_not(tf.math.equal(real, 0))
   mask = tf.cast(mask, dtype=loss_.dtype)
