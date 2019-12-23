@@ -69,7 +69,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
     enc_out, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inputs, hidden)
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = [[state_h, state_c]]
+    dec_hidden = state_h + state_c
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
     # TODO: stop only at a stop word
     for t in range(training_info['max_length_targ']):
