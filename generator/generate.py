@@ -39,7 +39,7 @@ def beam_search(previous_beam, new_predictions, ref_idx2word):
         # sort in ascending order
         ids_by_prob = np.argsort(-pred)[:BEAM_SIZE]
         #print('most probable ids', ids_by_prob)
-        words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob if idd != 0]
+        words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob]
         #print('most probable words', words_by_prob)
         probs = pred[ids_by_prob]
         #print(probs)
@@ -82,6 +82,9 @@ def evaluate(encoder, decoder, mr_info, training_info):
         # use beam search to keep n best predictions
         beam = beam_search(beam, predictions, training_info['ref_idx2word'])
         next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
+        for n in next_inputs:
+            print(training_info['ref_idx2word'][n[0]])
+        print('----')
         if next_inputs == []:
             # TODO: rerank final beams
             return beam[0].utterance, mr_info, attention_plot

@@ -56,7 +56,7 @@ class Decoder(tf.keras.Model):
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
     self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
-    self.fc = layers.Dense(vocab_size)
+    self.fc = layers.Dense(vocab_size, activation='softmax')
     self.dropout = tf.keras.layers.Dropout(0.3)
     # used for attention
     self.attention = BahdanauAttention(hidden_size)
