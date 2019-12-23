@@ -71,6 +71,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
     dec_hidden = state_h + state_c
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
+    result = ''
     # TODO: stop only at a stop word
     for t in range(training_info['max_length_targ']):
         predictions, dec_hidden, attention_weights = decoder(dec_input,
