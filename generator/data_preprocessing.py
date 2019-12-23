@@ -79,7 +79,6 @@ def tokenize(texts):
     text_tokenizer.fit_on_texts(texts)
     tensor = text_tokenizer.texts_to_sequences(texts)
     tensor = tf.keras.preprocessing.sequence.pad_sequences(tensor, padding='post')
-    print(tensor)
     return tensor, text_tokenizer.word_index, text_tokenizer.index_word
 
 def reconstruct_mr(data, mrs):

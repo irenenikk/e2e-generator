@@ -24,7 +24,7 @@ class BeamObj:
         self.last_id = last_id
 
     def __repr__(self):
-        return f'{self.utterance} ({self.probability})'
+        return '{}({})'.format(self.utterance, self.probability)
 
 
 def beam_search(previous_beam, new_predictions, ref_idx2word):
@@ -82,9 +82,9 @@ def evaluate(encoder, decoder, mr_info, training_info):
         # use beam search to keep n best predictions
         beam = beam_search(beam, predictions, training_info['ref_idx2word'])
         next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
-        for n in next_inputs:
-            print(training_info['ref_idx2word'][n[0]])
-        print('----')
+        #for n in next_inputs:
+        #    print(training_info['ref_idx2word'][n[0]])
+        #print('----')
         if next_inputs == []:
             # TODO: rerank final beams
             return beam[0].utterance, mr_info, attention_plot
@@ -121,8 +121,16 @@ if __name__ == "__main__":
     test_data_file = sys.argv[2]
     training_info_file = 'training_info.pkl' if len(sys.argv) < 4 else sys.argv[3]
     training_info = load_training_info(training_info_file)
-    encoder = Encoder(len(training_info['mr_word2idx'])+1, training_info['embedding_dim'], training_info['units'], BATCH_SIZE)
-    decoder = Decoder(len(training_info['ref_word2idx'])+1, training_info['decoder_layers'], training_info['embedding_dim'], training_info['units']*2, BATCH_SIZE, training=False)
+    encoder = Encoder(len(training_info['mr_word2idx'])+1, 
+                        training_info['embedding_dim'], 
+                        training_info['units'], 
+                        BATCH_SIZE)
+    decoder = Decoder(len(training_info['ref_word2idx'])+1, 
+                        training_info['decoder_layers'], 
+                        training_info['embedding_dim'], 
+                        training_info['units']*2, 
+                        BATCH_SIZE, 
+                        training=False)
     optimizer = tf.keras.optimizers.Adam()
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,

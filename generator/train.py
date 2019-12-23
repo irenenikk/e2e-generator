@@ -9,6 +9,7 @@ import os
 import pickle
 import json
 import ipdb
+import nltk
 
 EPOCHS = 10
 BATCH_SIZE = 64
@@ -42,7 +43,7 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 @tf.function
-def train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob):
+def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
   loss = 0
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
@@ -113,7 +114,7 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state()
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob)
+            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
