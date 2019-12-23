@@ -10,12 +10,12 @@ import pickle
 import json
 import ipdb
 
-EPOCHS = 100
+EPOCHS = 10
 BATCH_SIZE = 64
 embedding_dim = 256
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
-DECODER_NUM_LAYERS = 4
+DECODER_NUM_LAYERS = 1
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
@@ -32,7 +32,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
         pickle.dump(training_info, f)
 
 def loss_function(real, pred):
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')      
+  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False, reduction='none')
   loss_ = loss_object(real, pred)
   mask = tf.math.logical_not(tf.math.equal(real, 0))
   mask = tf.cast(mask, dtype=loss_.dtype)
@@ -90,8 +90,7 @@ if __name__ == '__main__':
                         max_length_inp,
                         embedding_dim,
                         units,
-                        DECODER_NUM_LAYERS
-                        )
+                        DECODER_NUM_LAYERS)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units, BATCH_SIZE)
     decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE)
     optimizer = tf.keras.optimizers.Adam()
@@ -116,8 +115,8 @@ if __name__ == '__main__':
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss.numpy()))
-        if epoch % 5 == 0:
-              teacher_force_prob *= 0.85
+        #if epoch % 5 == 0:
+        #      teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)

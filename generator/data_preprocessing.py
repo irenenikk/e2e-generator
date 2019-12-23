@@ -20,9 +20,7 @@ def preprocess_mr(mr_info):
 def delexicalize_mr(mr_info, slots):
     for mr in DELEXICALIZED_MRS:
         if mr in slots.keys():
-#            print('replace', slots[mr])
             mr_info = mr_info.replace(slots[mr], mr + MR_SUFFIX)
-#            print('Processed', mr_info)
     return mr_info
 
 def get_slots(mr_info):
@@ -39,7 +37,7 @@ def delexicalize_ref(row, mr):
     mr_val = row[mr]
     if mr_val is None:
         return row['ref']
-    return row['ref'].replace(mr_val, mr + MR_SUFFIX)
+    return row['ref'].replace(mr_val.replace('_', ' '), mr + MR_SUFFIX)
 
 def delexicalize(data):
     """ Delexicalizes the dataset using slot columns. """

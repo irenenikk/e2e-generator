@@ -74,4 +74,4 @@ class Decoder(tf.keras.Model):
     output = tf.reshape(output, (-1, output.shape[2]))
     x = self.fc(output)
     # return the last state
-    return x, states[-1], attention_weights
+    return x, states, attention_weights
