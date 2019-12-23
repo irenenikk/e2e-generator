@@ -47,7 +47,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, teacher_force_prob):
     # initialize using the concatenated forward and backward states
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = [state_h, state_c]
+    dec_hidden = [[state_h, state_c]]
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
