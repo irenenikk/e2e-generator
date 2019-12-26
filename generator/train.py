@@ -52,20 +52,29 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
     dec_hidden = state_h + state_c
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
+    all_preds = None
+    all_targets = None
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
       # use teacher forcing stochastically
+      predicted_token = tf.argmax(predictions, axis=1)
       if np.random.uniform() < teacher_force_prob:
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
-        dec_input = tf.expand_dims(tf.argmax(predictions, axis=1), 1)
+        dec_input = tf.expand_dims(predicted_token, 1)
+      if all_preds is None:
+            all_preds = tf.expand_dims(predicted_token, 1)
+            all_targets = tf.expand_dims(targ[:, t], 1)
+      else:
+        all_preds = tf.concat([all_preds, tf.expand_dims(predicted_token, 1)], axis=1)
+        all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
   optimizer.apply_gradients(zip(gradients, variables))
-  return batch_loss
+  return batch_loss, all_preds, all_targets
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -75,6 +84,7 @@ if __name__ == '__main__':
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
     input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
@@ -113,8 +123,16 @@ if __name__ == '__main__':
         start = time.time()
         enc_hidden = encoder.initialize_hidden_state()
         total_loss = 0
-        for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):              
-            batch_loss = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+        for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
+            batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            '''
+            preds = all_preds.numpy()
+            targets = all_targets.numpy()
+            for b in range(preds.shape[0]):
+                  print('prediction: ', [ref_idx2word[p] for p in preds[b]])
+                  print('target: ', [ref_idx2word[t] for t in targets[b] if t > 0])
+            print('----------')
+            '''
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))

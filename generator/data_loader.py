@@ -49,8 +49,8 @@ def get_dataset(input_tensor, output_tensor, batch_size):
 def create_dataset(input_tensor, target_tensor, batch_size, embedding_dim, units, test_size=0.2):    
     input_tensor_train, input_tensor_val, target_tensor_train, target_tensor_val = train_test_split(input_tensor, target_tensor, test_size=test_size)
     steps_per_epoch = len(input_tensor_train)//batch_size
-    train_dataset = get_dataset(input_tensor_train, input_tensor_train, batch_size)
-    val_dataset = get_dataset(input_tensor_val, input_tensor_val, batch_size)
+    train_dataset = get_dataset(input_tensor_train, target_tensor_train, batch_size)
+    val_dataset = get_dataset(input_tensor_val, target_tensor_val, batch_size)
     return train_dataset, val_dataset, steps_per_epoch
 
 if __name__ == "__main__":
