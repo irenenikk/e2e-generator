@@ -11,12 +11,12 @@ import json
 import ipdb
 import nltk
 
-EPOCHS = 10
+EPOCHS = 30
 BATCH_SIZE = 32
-embedding_dim = 128
+embedding_dim = 256
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
-DECODER_NUM_LAYERS = 1
+DECODER_NUM_LAYERS = 4
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 100)
     print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
@@ -118,6 +118,7 @@ if __name__ == '__main__':
     print('Starting training')
     #train
     s = time.time()
+    end_id = ref_word2idx['<end>']
     teacher_force_prob = 1
     for epoch in range(EPOCHS):
         start = time.time()
@@ -130,10 +131,12 @@ if __name__ == '__main__':
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
-                for b in range(2):
-                      pred_sentence = [ref_idx2word[p] for p in preds[b]]
+                # show bleu score for a random sentence in batch
+                b = np.random.choice(len(all_preds))
+                print('----------')
+                      pred_sentence = [ref_idx2word[p] for p in preds[b] if p != end_id]
                       print('prediction: ', pred_sentence)
-                      target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0]
+                      target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
                       print('target: ', target_sentence)
                       bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                       print('Bleu score', bleu)
