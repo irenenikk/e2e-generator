@@ -78,8 +78,8 @@ class Decoder(tf.keras.Model):
     x = tf.concat(expanded, axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    #output, *states = self.rnn(x, initial_state=hidden)
-    output, state = self.gru(x)
+    output, *states = self.rnn(x, initial_state=hidden)
+    #output, state = self.gru(x)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
@@ -87,4 +87,4 @@ class Decoder(tf.keras.Model):
     x = self.dropout(x, training=self.training)
     x = self.fc(output)
     # return the last state
-    return x, state, attention_weights
+    return x, states[-1], attention_weights

@@ -125,14 +125,12 @@ if __name__ == '__main__':
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
             batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
-            '''
             preds = all_preds.numpy()
             targets = all_targets.numpy()
             for b in range(preds.shape[0]):
                   print('prediction: ', [ref_idx2word[p] for p in preds[b]])
                   print('target: ', [ref_idx2word[t] for t in targets[b] if t > 0])
             print('----------')
-            '''
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))

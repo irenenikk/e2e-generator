@@ -32,7 +32,7 @@ def beam_search(previous_beam, new_predictions, ref_idx2word):
     new_beams = []
     for i in range(len(new_predictions)):
         pred = new_predictions.numpy()[i]
-        print(pred)
+        #print(pred)
         #print('pred length', len(pred))
         old_beam = previous_beam[i]
         #print('old beam', old_beam)
