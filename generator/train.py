@@ -127,13 +127,17 @@ if __name__ == '__main__':
             batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             preds = all_preds.numpy()
             targets = all_targets.numpy()
-            for b in range(preds.shape[0]):
-                  print('prediction: ', [ref_idx2word[p] for p in preds[b]])
-                  print('target: ', [ref_idx2word[t] for t in targets[b] if t > 0])
-            print('----------')
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
+                for b in range(2):
+                      pred_sentence = [ref_idx2word[p] for p in preds[b]]
+                      print('prediction: ', pred_sentence)
+                      target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0]
+                      print('target: ', target_sentence)
+                      bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
+                      print('Bleu score', bleu)
+                print('----------')
         #if epoch % 5 == 0:
         #      teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
