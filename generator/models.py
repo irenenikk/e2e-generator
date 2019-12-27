@@ -54,8 +54,8 @@ class Decoder(tf.keras.Model):
     self.num_layers = num_layers
     self.embedding_dim = embedding_dim
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
-    #self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
-    #self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
+    self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
+    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.gru = tf.keras.layers.GRU(self.hidden_size,
                                    return_sequences=True,
                                    return_state=True,
