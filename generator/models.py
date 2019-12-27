@@ -70,7 +70,7 @@ class Decoder(tf.keras.Model):
   def call(self, x, hidden, enc_output):
     #print('x', x.shape)
     #print('hidden ', hidden)
-    context_vector, attention_weights = self.attention([hidden], enc_output)
+    context_vector, attention_weights = self.attention(hidden, enc_output)
     x = self.embedding(x)
     #print('x embedding', x.shape)
     expanded = tf.expand_dims(context_vector, 1)
@@ -78,7 +78,7 @@ class Decoder(tf.keras.Model):
     x = tf.concat(expanded, axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    output, *states = self.rnn(x, initial_state=hidden)
+    output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
     #output, state = self.gru(x)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
