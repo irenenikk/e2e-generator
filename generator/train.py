@@ -83,7 +83,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 100)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
@@ -134,12 +134,12 @@ if __name__ == '__main__':
                 # show bleu score for a random sentence in batch
                 b = np.random.choice(len(all_preds))
                 print('----------')
-                      pred_sentence = [ref_idx2word[p] for p in preds[b] if p != end_id]
-                      print('prediction: ', pred_sentence)
-                      target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
-                      print('target: ', target_sentence)
-                      bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
-                      print('Bleu score', bleu)
+                pred_sentence = [ref_idx2word[p] for p in preds[b] if p != end_id]
+                print('prediction: ', pred_sentence)
+                target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
+                print('target: ', target_sentence)
+                bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
+                print('Bleu score', bleu)
                 print('----------')
         #if epoch % 5 == 0:
         #      teacher_force_prob *= 0.85
