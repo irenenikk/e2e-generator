@@ -12,7 +12,7 @@ import ipdb
 import nltk
 
 EPOCHS = 30
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
