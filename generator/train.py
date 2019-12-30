@@ -141,8 +141,8 @@ if __name__ == '__main__':
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
                 print('----------')
-        #if epoch % 5 == 0:
-        #      teacher_force_prob *= 0.85
+        if epoch % 5 == 0:
+              teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
