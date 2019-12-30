@@ -97,7 +97,6 @@ def evaluate(encoder, decoder, mr_info, training_info):
         #    print(training_info['ref_idx2word'][n[0]])
         #print('----')
         if next_inputs == []:
-            # TODO: rerank final beams
             return beam, processed_mr_info, attention_plot
         # the predicted ID is fed back into the model
         dec_input = np.asarray(next_inputs)
@@ -120,12 +119,13 @@ def generate_reference(encoder, decoder, mr_info, training_info):
     # postprocess and score the beam
     for beamObj in beams:    
         processed_utterance = postprocess_utterance(beamObj.utterance, mr_slots)
+        print(processed_utterance)
         beamObj.processed_utterance = processed_utterance
         score = score_prediction(processed_utterance, mr_slots)
         beamObj.probability += np.log(score)
     # order again by probability
     beams.sort(key=lambda x: x.probability, reverse=True)
-    best_prediction = beams[0].processed_utterance
+    best_prediction = beams[:3]
     #attention_plot = attention_plot[:len(best_prediction.split(' ')), :len(mr_info.split(' '))]
     #plot_attention(attention_plot, mr_info.split(' '), best_prediction.split(' '))
     return best_prediction
@@ -136,11 +136,11 @@ def load_training_info(training_info_file):
 
 if __name__ == "__main__":
     # restoring the latest checkpoint in checkpoint_dir
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print('Please give path to data file as argument')
         exit()
-    checkpoint_dir = sys.argv[1]
-    test_data_file = sys.argv[2]
+    test_data_file = sys.argv[1]
+    checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     training_info_file = 'training_info.pkl' if len(sys.argv) < 4 else sys.argv[3]
     training_info = load_training_info(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
