@@ -132,7 +132,7 @@ if __name__ == '__main__':
                 # show bleu score for a random sentence in batch
                 b = np.random.choice(len(all_preds))
                 print('----------')
-                pred_sentence = [ref_idx2word[p] for p in preds[b] if p != end_id]
+                pred_sentence = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
                 print('prediction: ', pred_sentence)
                 target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
                 print('target: ', target_sentence)
