@@ -55,7 +55,7 @@ class Decoder(tf.keras.Model):
     self.embedding_dim = embedding_dim
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
-    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
+    #self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.gru = tf.keras.layers.GRU(self.hidden_size,
                                    return_sequences=True,
                                    return_state=True,
@@ -70,7 +70,7 @@ class Decoder(tf.keras.Model):
   def call(self, x, hidden, enc_output):
     #print('x', x.shape)
     #print('hidden ', hidden)
-    context_vector, attention_weights = self.attention(hidden, enc_output)
+    context_vector, attention_weights = self.attention([hidden], enc_output)
     x = self.embedding(x)
     #print('x embedding', x.shape)
     expanded = tf.expand_dims(context_vector, 1)
@@ -78,8 +78,8 @@ class Decoder(tf.keras.Model):
     x = tf.concat(expanded, axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
-    #output, state = self.gru(x)
+    #output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
+    output, state = self.gru(x)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
@@ -87,4 +87,4 @@ class Decoder(tf.keras.Model):
     x = self.dropout(x, training=self.training)
     x = self.fc(output)
     # return the last state
-    return x, states[-1], attention_weights
+    return x, state, attention_weights

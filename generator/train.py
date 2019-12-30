@@ -50,7 +50,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     # initialize using the concatenated forward and backward states
     state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = [state_h, state_c]
+    dec_hidden = state_h
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     all_preds = None
     all_targets = None
