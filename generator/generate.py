@@ -79,10 +79,8 @@ def evaluate(encoder, decoder, mr_info, training_info):
     inputs = tf.convert_to_tensor(inputs)
     beam = [BeamObj('', 0, -1)]*BEAM_SIZE
     hidden = [tf.zeros((1, training_info['units']))]*4
-    enc_out, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inputs, hidden)
-    state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
-    state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = [state_h, state_c]
+    enc_out, forward_hidden, backward_hidden, backward_mem = encoder(inputs, hidden)
+    dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
     # TODO: stop only at a stop word
     for t in range(training_info['max_length_targ']):
