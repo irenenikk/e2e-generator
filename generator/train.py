@@ -12,11 +12,11 @@ import ipdb
 import nltk
 
 EPOCHS = 30
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
-DECODER_NUM_LAYERS = 4
+DECODER_NUM_LAYERS = 1
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
