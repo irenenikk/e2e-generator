@@ -78,7 +78,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
     beam = [BeamObj('', 0, -1)]*BEAM_SIZE
-    hidden = [tf.zeros((1, training_info['units']))]*4
+    hidden = [tf.zeros((1, training_info['units']))]*2
     enc_out, forward_hidden, backward_hidden, backward_mem = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
