@@ -13,7 +13,7 @@ import nltk
 
 EPOCHS = 30
 BATCH_SIZE = 32
-embedding_dim = 128
+embedding_dim = 256
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 1
@@ -46,11 +46,9 @@ def loss_function(real, pred):
 def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
   loss = 0
   with tf.GradientTape() as tape:
-    enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
+    enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
-    state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
-    state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
-    dec_hidden = state_h
+    dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     all_preds = None
     all_targets = None
@@ -68,8 +66,8 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
             all_preds = tf.expand_dims(predicted_token, 1)
             all_targets = tf.expand_dims(targ[:, t], 1)
       else:
-        all_preds = tf.concat([all_preds, tf.expand_dims(predicted_token, 1)], axis=1)
-        all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
+          all_preds = tf.concat([all_preds, tf.cast(dec_input, all_preds.dtype)], axis=1)
+          all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -83,7 +81,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
     print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
@@ -141,8 +139,8 @@ if __name__ == '__main__':
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
                 print('----------')
-        if epoch % 5 == 0:
-              teacher_force_prob *= 0.85
+        #if epoch % 5 == 0:
+        #      teacher_force_prob *= 0.85
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)

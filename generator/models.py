@@ -10,19 +10,20 @@ class Encoder(tf.keras.Model):
     self.hidden_size = hidden_size
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     # use a bidirectional lstm
-    lstm_layer = layers.LSTM(hidden_size, 
+    gru_layer = layers.GRU(hidden_size, 
                             return_sequences=True, 
-                            return_state=True)
-    self.bidirectional_lstm = layers.Bidirectional(lstm_layer)
+                            return_state=True, 
+                            recurrent_initializer='glorot_uniform')
+    self.bidirectional_gru = layers.Bidirectional(gru_layer)
 
   def call(self, x, hidden):
     x = self.embedding(x)
-    output, forward_hidden, forward_mem, backward_hidden, backward_mem = self.bidirectional_lstm(x, initial_state=hidden)
-    return output, forward_hidden, forward_mem, backward_hidden, backward_mem
+    output, forward_hidden, backward_hidden = self.bidirectional_gru(x, initial_state=hidden)
+    return output, forward_hidden, backward_hidden
 
   def initialize_hidden_state(self):
-    forward_state = [tf.zeros([self.batch_size, self.hidden_size])] * 2
-    backward_state = [tf.zeros([self.batch_size, self.hidden_size])] * 2
+    forward_state = [tf.zeros([self.batch_size, self.hidden_size])]
+    backward_state = [tf.zeros([self.batch_size, self.hidden_size])]
     return forward_state + backward_state
 
 class BahdanauAttention(layers.Layer):
