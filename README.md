@@ -6,7 +6,7 @@ The final goal of the project is to explore the task of content selection, that 
 
 ## TODO
 - [x] Implement beam search
-- [ ] Use Juraska reranking
+- [x] Use Juraska reranking
 - [ ] Implement semantically conditioned LSTM
 - [ ] Run sampling experiments
 

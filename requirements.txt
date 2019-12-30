@@ -5,3 +5,4 @@ sklearn==0.0
 matplotlib
 IPython
 ipdb==0.12.3
+nltk==3.4.5

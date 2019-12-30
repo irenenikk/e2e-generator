@@ -4,3 +4,4 @@ training_checkpoints/
 training_info*
 *.idea
 *__pycache__*
+.DS_Store
