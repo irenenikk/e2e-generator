@@ -13,7 +13,7 @@ from generate import evaluate, load_training_info
 
 EPOCHS = 5
 BATCH_SIZE = 32
-embedding_dim = 256
+embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 1
