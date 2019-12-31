@@ -4,9 +4,8 @@ from IPython.core.debugger import set_trace
 
 class Encoder(tf.keras.Model):
   """ The encoder is a bidirectional LSTM as in the winning system by Jurafsky et al. """
-  def __init__(self, vocab_size, embedding_dim, hidden_size, batch_size):
+  def __init__(self, vocab_size, embedding_dim, hidden_size):
     super(Encoder, self).__init__()
-    self.batch_size = batch_size
     self.hidden_size = hidden_size
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     # use a bidirectional lstm
@@ -21,9 +20,9 @@ class Encoder(tf.keras.Model):
     output, forward_hidden, backward_hidden = self.bidirectional_gru(x, initial_state=hidden)
     return output, forward_hidden, backward_hidden
 
-  def initialize_hidden_state(self):
-    forward_state = [tf.zeros([self.batch_size, self.hidden_size])]
-    backward_state = [tf.zeros([self.batch_size, self.hidden_size])]
+  def initialize_hidden_state(self, batch_size):
+    forward_state = [tf.zeros([batch_size, self.hidden_size])]
+    backward_state = [tf.zeros([batch_size, self.hidden_size])]
     return forward_state + backward_state
 
 class BahdanauAttention(layers.Layer):
@@ -48,9 +47,8 @@ class Decoder(tf.keras.Model):
   """ Jurafsky et al's decoder is a 4-layer RNN with 512 LSTM cells. 
       In order to use the concatented forward and backward states from the encoder, 
       we've doubled the amount of cells in the decoder. """
-  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, batch_sz, training):
+  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, training):
     super(Decoder, self).__init__()
-    self.batch_sz = batch_sz
     self.hidden_size = hidden_size
     self.num_layers = num_layers
     self.embedding_dim = embedding_dim

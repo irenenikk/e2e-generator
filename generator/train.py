@@ -9,8 +9,9 @@ import os
 import pickle
 import json
 import nltk
+from generate import evaluate, load_training_info
 
-EPOCHS = 30
+EPOCHS = 5
 BATCH_SIZE = 32
 embedding_dim = 256
 units = 512
@@ -44,6 +45,7 @@ def loss_function(real, pred):
 @tf.function
 def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
   loss = 0
+  print('teacher_force_prob', teacher_force_prob)
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
@@ -80,7 +82,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
     print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
@@ -101,8 +103,9 @@ if __name__ == '__main__':
                         embedding_dim,
                         units,
                         DECODER_NUM_LAYERS)
-    encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units, BATCH_SIZE)
-    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, BATCH_SIZE, training=True)
+    training_info = load_training_info(TRAINING_INFO_FILE)
+    encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units)
+    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, training=True)
     optimizer = tf.keras.optimizers.Adam()
     # prepare to train
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
@@ -119,27 +122,29 @@ if __name__ == '__main__':
     teacher_force_prob = 1
     for epoch in range(EPOCHS):
         start = time.time()
-        enc_hidden = encoder.initialize_hidden_state()
+        enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
             batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             preds = all_preds.numpy()
             targets = all_targets.numpy()
             total_loss += batch_loss
-            if batch % 100 == 0:
+            if batch % 50 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
+                print('----------')
                 # show bleu score for a random sentence in batch
                 b = np.random.choice(len(all_preds))
-                print('----------')
-                pred_sentence = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
+                mr_info = ' '.join([mr_idx2word[t] for t in inp.numpy()[b] if t != 0])
+                #pred_sentence = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
+                pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
                 print('prediction: ', pred_sentence)
                 target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
                 print('target: ', target_sentence)
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
                 print('----------')
-        #if epoch % 5 == 0:
-        #      teacher_force_prob *= 0.85
+        if epoch % 2 == 0:
+              teacher_force_prob *= 0.9
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)

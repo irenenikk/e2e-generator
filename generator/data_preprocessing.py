@@ -12,7 +12,7 @@ def preprocess_mr(mr_info):
     slots = get_slots(mr_info)
     mr_info = " , ".join([slot + "[" + slot_value.replace(" ", "_") + "]" for slot, slot_value in slots.items()])
     mr_info = delexicalize_mr(mr_info, slots)
-    mr_info = add_space_to_punctuation(mr_info)
+    #mr_info = add_space_to_punctuation(mr_info)
     mr_info = mr_info.lower()
 #    print('PROCESSED MR INFO', mr_info)
     return mr_info

@@ -10,11 +10,12 @@ import time
 import os
 import pickle
 import nltk
+import ipdb; 
 #from slug2slug.slot_aligner.slot_alignment import get_unaligned_and_hallucinated_slots
 from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
 
-BATCH_SIZE = 64
+BATCH_SIZE = 1
 # optimal beam size found by Juraska
 BEAM_SIZE = 10
 
@@ -33,21 +34,20 @@ class BeamObj:
 def beam_search(previous_beam, new_predictions, ref_idx2word):
     """ Calculate the log probability of each sequence and return in descending order. """ 
     new_beams = []
-    for i in range(len(new_predictions)):
-        pred = new_predictions.numpy()[i]
-        #print(pred)
-        #print('pred length', len(pred))
-        old_beam = previous_beam[i]
-        #print('old beam', old_beam)
-        # sort in ascending order
-        ids_by_prob = np.argsort(-pred)[:BEAM_SIZE]
-        #print('most probable ids', ids_by_prob)
-        words_by_prob = [ref_idx2word[idd] for idd in ids_by_prob if idd != 0]
-        #print('most probable words', words_by_prob)
-        probs = pred[ids_by_prob]
-        #print(probs)
-        #print('ordered probs', probs)
-        new_beams += [BeamObj(old_beam.utterance + " " + ref_idx2word[idd], old_beam.probability + np.log(prob), idd) for idd, prob in zip(ids_by_prob, probs) if idd > 0]
+    # for each beamobj in batch
+    # batch size is the length of the beam
+    for prev_beam_obj in previous_beam:
+        # calculate probabilites if new predictions were added
+        curr_prob = prev_beam_obj.probability
+        curr_utterance = prev_beam_obj.utterance
+        # check for all new predictions in the beam
+        for beam_id in range(new_predictions.shape[0]):
+            for word_id in range(1, new_predictions.shape[1]):
+                pred = new_predictions[beam_id,word_id]
+                new_prob = curr_prob + np.log(pred)
+                new_utterance = curr_utterance + " " + ref_idx2word[word_id]
+                new_beams += [(BeamObj(new_utterance, new_prob, word_id))]
+        # add the results to the previous beam
     #print('new_beams', new_beams)
     new_beams.sort(key=lambda x: x.probability, reverse=True)
     #print('new_beams sorted', new_beams)
@@ -77,12 +77,12 @@ def evaluate(encoder, decoder, mr_info, training_info):
                                                            maxlen=training_info['max_length_inp'],
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
-    beam = [BeamObj('', 0, -1)]*BEAM_SIZE
-    hidden = [tf.zeros((1, training_info['units']))]*2
+    beam = [BeamObj('', 0, -1)]
+    hidden = encoder.initialize_hidden_state(1)
     enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([training_info['ref_word2idx']['<start>']], 0)
-    # TODO: stop only at a stop word
+    result = ''
     for t in range(training_info['max_length_targ']):
         predictions, dec_hidden, attention_weights = decoder(dec_input,
                                                              dec_hidden,
@@ -92,15 +92,24 @@ def evaluate(encoder, decoder, mr_info, training_info):
         attention_plot[t] = attention_weights.numpy()
         # use beam search to keep n best predictions
         beam = beam_search(beam, predictions, training_info['ref_idx2word'])
+        predicted_id = tf.argmax(predictions[0]).numpy()
+        result += training_info['ref_idx2word'][predicted_id] + ' '
+        #print(result)
         next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
         #for n in next_inputs:
         #    print(training_info['ref_idx2word'][n[0]])
         #print('----')
+        if training_info['ref_idx2word'][predicted_id] == '<end>':
+            return result, mr_info, attention_plot
         if next_inputs == []:
             return beam, processed_mr_info, attention_plot
         # the predicted ID is fed back into the model
+        dec_input = tf.expand_dims([predicted_id], 0)
+    return result, mr_info, attention_plot
+    '''
         dec_input = np.asarray(next_inputs)
     return beam, processed_mr_info, attention_plot
+    '''
 
 # function for plotting the attention weights
 def plot_attention(attention, sentence, predicted_sentence):
@@ -114,18 +123,17 @@ def plot_attention(attention, sentence, predicted_sentence):
 
 def generate_reference(encoder, decoder, mr_info, training_info):
     """ Generate new reference, and postprocess it to form a complete sentence."""
-    beams, processed_mr_info, attention_plot = evaluate(encoder, decoder, mr_info, training_info)
+    beam, processed_mr_info, attention_plot = evaluate(encoder, decoder, mr_info, training_info)
     mr_slots = get_slots(mr_info)
     # postprocess and score the beam
-    for beamObj in beams:    
+    for beamObj in beam:    
         processed_utterance = postprocess_utterance(beamObj.utterance, mr_slots)
-        print(processed_utterance)
         beamObj.processed_utterance = processed_utterance
         score = score_prediction(processed_utterance, mr_slots)
         beamObj.probability += np.log(score)
     # order again by probability
-    beams.sort(key=lambda x: x.probability, reverse=True)
-    best_prediction = beams[:3]
+    beam.sort(key=lambda x: x.probability, reverse=True)
+    best_prediction = beam[0].utterance
     #attention_plot = attention_plot[:len(best_prediction.split(' ')), :len(mr_info.split(' '))]
     #plot_attention(attention_plot, mr_info.split(' '), best_prediction.split(' '))
     return best_prediction
