@@ -77,7 +77,7 @@ def evaluate(encoder, decoder, mr_info, training_info):
                                                            maxlen=training_info['max_length_inp'],
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
-    beam = [BeamObj('', 0, -1)]
+    #beam = [BeamObj('', 0, -1)]
     hidden = encoder.initialize_hidden_state(1)
     enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
@@ -91,18 +91,18 @@ def evaluate(encoder, decoder, mr_info, training_info):
         attention_weights = tf.reshape(attention_weights, (-1, ))
         attention_plot[t] = attention_weights.numpy()
         # use beam search to keep n best predictions
-        beam = beam_search(beam, predictions, training_info['ref_idx2word'])
+        #beam = beam_search(beam, predictions, training_info['ref_idx2word'])
         predicted_id = tf.argmax(predictions[0]).numpy()
         result += training_info['ref_idx2word'][predicted_id] + ' '
         #print(result)
-        next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
+        #next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
         #for n in next_inputs:
         #    print(training_info['ref_idx2word'][n[0]])
         #print('----')
         if training_info['ref_idx2word'][predicted_id] == '<end>':
             return result, mr_info, attention_plot
-        if next_inputs == []:
-            return beam, processed_mr_info, attention_plot
+        #if next_inputs == []:
+        #    return beam, processed_mr_info, attention_plot
         # the predicted ID is fed back into the model
         dec_input = tf.expand_dims([predicted_id], 0)
     return result, mr_info, attention_plot
