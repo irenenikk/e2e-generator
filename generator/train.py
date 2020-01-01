@@ -48,7 +48,7 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 @tf.function
-def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch):
+def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
   loss = 0
   print('teacher_force_prob', teacher_force_prob)
   with tf.GradientTape() as tape:
@@ -67,13 +67,12 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
         dec_input = tf.expand_dims(predicted_tokens, 1)
-      if (batch+1) % 100 == 0:
-        if all_preds is None:
-              all_preds = tf.expand_dims(predicted_tokens, 1)
-              all_targets = tf.expand_dims(targ[:, t], 1)
-        else:
-            all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
-            all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
+      if all_preds is None:
+            all_preds = tf.expand_dims(predicted_tokens, 1)
+            all_targets = tf.expand_dims(targ[:, t], 1)
+      else:
+          all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
+          all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -130,9 +129,10 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
+            batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            ipdb.set_trace()
             total_loss += batch_loss
-            if (batch+1) % 100 == 0:
+            if (batch+1) % 50 == 0:
               preds = all_preds.numpy()
               targets = all_targets.numpy()
               print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
