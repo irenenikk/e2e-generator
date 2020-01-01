@@ -78,7 +78,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
   optimizer.apply_gradients(zip(gradients, variables))
-  return batch_loss, all_preds, all_targets, gradients
+  return batch_loss, all_preds, all_targets
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -130,7 +130,7 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
+            batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
             total_loss += batch_loss
             if (batch+1) % 100 == 0:
               preds = all_preds.numpy()
