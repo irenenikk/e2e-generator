@@ -95,7 +95,8 @@ def evaluate(encoder, decoder, mr_info, training_info):
         # use beam search to keep n best predictions
         #beam = beam_search(beam, predictions, training_info['ref_idx2word'])
         #predicted_id = tf.argmax(predictions[0]).numpy()
-        predicted_id = np.random.choice(len(preds), p=preds)
+        pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions[0])
+        predicted_id = tf.argmax(pred_dist.sample(1), axis=1).numpy()[0]
         result += training_info['ref_idx2word'][predicted_id] + ' '
         #next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
         #for n in next_inputs:
