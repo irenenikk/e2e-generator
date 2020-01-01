@@ -6,3 +6,4 @@ matplotlib
 IPython
 ipdb==0.12.3
 nltk==3.4.5
+tensorflow-probability

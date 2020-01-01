@@ -59,7 +59,7 @@ class Decoder(tf.keras.Model):
                                    return_sequences=True,
                                    return_state=True,
                                    recurrent_initializer='glorot_uniform')
-    self.fc = layers.Dense(vocab_size, activation='softmax')
+    self.fc = layers.Dense(vocab_size)
     self.dropout = tf.keras.layers.Dropout(0.3)
     # used for attention
     self.attention = BahdanauAttention(hidden_size)

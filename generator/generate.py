@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_probability as tfp
 import numpy as np
 import matplotlib.pyplot as plt
 from data_preprocessing import preprocess_mr, get_slots
@@ -87,14 +88,15 @@ def evaluate(encoder, decoder, mr_info, training_info):
         predictions, dec_hidden, attention_weights = decoder(dec_input,
                                                              dec_hidden,
                                                              enc_out)
+        preds = predictions.numpy()[0]
         # storing the attention weights to plot later on
         attention_weights = tf.reshape(attention_weights, (-1, ))
         attention_plot[t] = attention_weights.numpy()
         # use beam search to keep n best predictions
         #beam = beam_search(beam, predictions, training_info['ref_idx2word'])
-        predicted_id = tf.argmax(predictions[0]).numpy()
+        #predicted_id = tf.argmax(predictions[0]).numpy()
+        predicted_id = np.random.choice(len(preds), p=preds)
         result += training_info['ref_idx2word'][predicted_id] + ' '
-        #print(result)
         #next_inputs = [[b.last_id] for b in beam if training_info['ref_idx2word'][b.last_id] != '<end>']
         #for n in next_inputs:
         #    print(training_info['ref_idx2word'][n[0]])
@@ -138,6 +140,11 @@ def generate_reference(encoder, decoder, mr_info, training_info):
     #plot_attention(attention_plot, mr_info.split(' '), best_prediction.split(' '))
     return best_prediction
 
+def generate_reference_no_beam(encoder, decoder, mr_info, training_info):
+    """ Generate new reference, and postprocess it to form a complete sentence."""
+    res, processed_mr_info, attention_plot = evaluate(encoder, decoder, mr_info, training_info)
+    return res
+
 def load_training_info(training_info_file):
     with open(training_info_file, 'rb') as f:
         return pickle.load(f)
@@ -153,13 +160,11 @@ if __name__ == "__main__":
     training_info = load_training_info(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
-                        training_info['units'], 
-                        BATCH_SIZE)
+                        training_info['units'])
     decoder = Decoder(len(training_info['ref_word2idx'])+1, 
                         training_info['decoder_layers'], 
                         training_info['embedding_dim'], 
                         training_info['units']*2, 
-                        BATCH_SIZE, 
                         training=False)
     optimizer = tf.keras.optimizers.Adam()
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
@@ -169,7 +174,7 @@ if __name__ == "__main__":
     # get test data
     test_data = load_text_data(test_data_file)
     for i in range(len(test_data)):
-        generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
+        generated = generate_reference_no_beam(encoder, decoder, test_data['mr'].iloc[i], training_info)
         print(test_data['mr'].iloc[i])
         print(generated)
         bleu = nltk.translate.bleu_score.sentence_bleu([test_data['mr'].iloc[i]], generated)

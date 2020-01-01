@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from data_loader import create_dataset, load_data_tensors, max_length
 import tensorflow as tf
+import tensorflow_probability as tfp
 from models import Encoder, BahdanauAttention, Decoder
 import time
 import os
@@ -33,7 +34,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
         pickle.dump(training_info, f)
 
 def loss_function(real, pred):
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False, reduction='none')
+  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   # ignore padded parts of the input
   # this can be done because 0 is a special index
   loss_ = loss_object(real, pred)
@@ -57,17 +58,18 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
-      # use teacher forcing stochastically
-      predicted_token = tf.argmax(predictions, axis=1)
+      #predicted_token = tf.argmax(predictions, axis=1)
+      pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
+      predicted_tokens = tf.argmax(pred_dist.sample(BATCH_SIZE), axis=1)
       if np.random.uniform() < teacher_force_prob:
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
-        dec_input = tf.expand_dims(predicted_token, 1)
+        dec_input = tf.expand_dims(predicted_tokens, 1)
       if all_preds is None:
-            all_preds = tf.expand_dims(predicted_token, 1)
+            all_preds = tf.expand_dims(predicted_tokens, 1)
             all_targets = tf.expand_dims(targ[:, t], 1)
       else:
-          all_preds = tf.concat([all_preds, tf.cast(dec_input, all_preds.dtype)], axis=1)
+          all_preds = tf.concat([all_preds, tf.cast(tf.expand_dims(predicted_tokens, 1), all_preds.dtype)], axis=1)
           all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
