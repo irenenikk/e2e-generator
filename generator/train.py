@@ -60,7 +60,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
       loss += loss_function(targ[:, t], predictions)
       #predicted_token = tf.argmax(predictions, axis=1)
       pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
-      predicted_tokens = tf.argmax(pred_dist.sample(1), axis=2)
+      predicted_tokens = tf.transpose(tf.argmax(pred_dist.sample(1), axis=2))
       if np.random.uniform() < teacher_force_prob:
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
@@ -71,8 +71,8 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
             all_preds = predicted_tokens
             all_targets = tf.expand_dims(targ[:, t], 1)
       else:
-          #all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1), ], axis=1)
-          all_preds = tf.concat([all_preds, predicted_tokens, ], axis=1)
+          #all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
+          all_preds = tf.concat([all_preds, predicted_tokens], axis=1)
           all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 1000)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Found data of shape', input_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
