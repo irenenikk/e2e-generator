@@ -11,6 +11,7 @@ import pickle
 import json
 import nltk
 from generate import evaluate, load_training_info
+#import ipdb;
 
 EPOCHS = 5
 BATCH_SIZE = 32
@@ -34,8 +35,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
     with open(TRAINING_INFO_FILE, 'wb') as f:
         pickle.dump(training_info, f)
 
-def loss_function(real, pred):
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+def loss_function(loss_object, real, pred):
   # ignore padded parts of the input
   # this can be done because 0 is a special index
   loss_ = loss_object(real, pred)
@@ -45,9 +45,10 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 @tf.function
-def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
+def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch):
   loss = 0
   print('teacher_force_prob', teacher_force_prob)
+  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
@@ -59,20 +60,21 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
-      loss += loss_function(targ[:, t], predictions)
+      loss += loss_function(loss_object, targ[:, t], predictions)
       predicted_tokens = tf.argmax(predictions, axis=1)
       if np.random.uniform() < teacher_force_prob:
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
         dec_input = tf.expand_dims(predicted_tokens, 1)
-      if all_preds is None:
-            all_preds = tf.expand_dims(predicted_tokens, 1)
-            all_targets = tf.expand_dims(targ[:, t], 1)
-            all_inputs = dec_input
-      else:
-          all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
-          all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
-          all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
+      if (batch+1) % 100 == 0:
+        if all_preds is None:
+              all_preds = tf.expand_dims(predicted_tokens, 1)
+              all_targets = tf.expand_dims(targ[:, t], 1)
+              all_inputs = dec_input
+        else:
+            all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
+            all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
+            all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -130,13 +132,12 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
-            #ipdb.set_trace()
-            preds = all_preds.numpy()
-            targets = all_targets.numpy()
-            inputs = all_inputs.numpy()
+            batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
             total_loss += batch_loss
-            if batch % 100 == 0:
+            if (batch+1) % 100 == 0:
+              preds = all_preds.numpy()
+              targets = all_targets.numpy()
+              inputs = all_inputs.numpy()
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
                 print('----------')
                 # show bleu score for a random sentence in batch
