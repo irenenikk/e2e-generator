@@ -54,6 +54,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     all_preds = None
     all_targets = None
+    all_inputs = None
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
@@ -70,15 +71,17 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
             #all_preds = tf.expand_dims(predicted_tokens, 1)
             all_preds = predicted_tokens
             all_targets = tf.expand_dims(targ[:, t], 1)
+            all_inputs = dec_input
       else:
           #all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
           all_preds = tf.concat([all_preds, predicted_tokens], axis=1)
           all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
+          all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
   optimizer.apply_gradients(zip(gradients, variables))
-  return batch_loss, all_preds, all_targets
+  return batch_loss, all_preds, all_targets, all_inputs
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -87,8 +90,9 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
-    print('Found data of shape', input_tensor.shape)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 200)
+    print('Found input data of shape', input_tensor.shape)
+    print('Found target data of shape', target_tensor.shape)
     print('Creating dataset')
     train_dataset, val_dataset, steps_per_epoch = create_dataset(input_tensor, 
                                                                 target_tensor, 
@@ -130,9 +134,10 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            batch_loss, all_preds, all_targets, all_inputs = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             preds = all_preds.numpy()
             targets = all_targets.numpy()
+            inputs = all_inputs.numpy()
             total_loss += batch_loss
             if batch % 50 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
@@ -144,6 +149,8 @@ if __name__ == '__main__':
                 print('prediction made in training: ', training_pred)
                 pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
                 print('prediction in evaluation: ', pred_sentence)
+                input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
+                print('input: ', input_sentence)
                 target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
                 print('target: ', target_sentence)
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
