@@ -18,6 +18,7 @@ embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 1
+TEACHER_FORCING = False
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
@@ -59,29 +60,24 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
-      #predicted_token = tf.argmax(predictions, axis=1)
-      pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
-      predicted_tokens = tf.transpose(tf.argmax(pred_dist.sample(1), axis=2))
+      predicted_tokens = tf.argmax(predictions, axis=1)
       if np.random.uniform() < teacher_force_prob:
         dec_input = tf.expand_dims(targ[:, t], 1)
       else:
-        #dec_input = tf.expand_dims(predicted_tokens, 1)
-        dec_input = predicted_tokens
+        dec_input = tf.expand_dims(predicted_tokens, 1)
       if all_preds is None:
-            #all_preds = tf.expand_dims(predicted_tokens, 1)
-            all_preds = predicted_tokens
+            all_preds = tf.expand_dims(predicted_tokens, 1)
             all_targets = tf.expand_dims(targ[:, t], 1)
             all_inputs = dec_input
       else:
-          #all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
-          all_preds = tf.concat([all_preds, predicted_tokens], axis=1)
+          all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
           all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
           all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
   optimizer.apply_gradients(zip(gradients, variables))
-  return batch_loss, all_preds, all_targets, all_inputs
+  return batch_loss, all_preds, all_targets, all_inputs, gradients
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -134,12 +130,13 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets, all_inputs = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            print('gradients', grads)
             preds = all_preds.numpy()
             targets = all_targets.numpy()
             inputs = all_inputs.numpy()
             total_loss += batch_loss
-            if batch % 50 == 0:
+            if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
                 print('----------')
                 # show bleu score for a random sentence in batch
@@ -156,7 +153,7 @@ if __name__ == '__main__':
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
                 print('----------')
-        if epoch % 2 == 0:
+        if epoch % 2 == 0 and TEACHER_FORCING:
               teacher_force_prob *= 0.9
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
