@@ -21,6 +21,8 @@ TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 1
 TEACHER_FORCING = False
 
+optimizer = tf.keras.optimizers.Adam()
+
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
     training_info['ref_word2idx'] = ref_word2idx
@@ -47,7 +49,6 @@ def loss_function(real, pred):
 
 @tf.function
 def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob):
-  optimizer = tf.keras.optimizers.Adam()
   loss = 0
   print('teacher_force_prob', teacher_force_prob)
   with tf.GradientTape() as tape:
