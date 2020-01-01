@@ -86,7 +86,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 200)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Found input data of shape', input_tensor.shape)
     print('Found target data of shape', target_tensor.shape)
     print('Creating dataset')
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
             batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
-            print('gradients', grads)
+            #ipdb.set_trace()
             preds = all_preds.numpy()
             targets = all_targets.numpy()
             inputs = all_inputs.numpy()

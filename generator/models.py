@@ -78,7 +78,7 @@ class Decoder(tf.keras.Model):
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
     #output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
-    output, state = self.gru(x)
+    output, state = self.gru(x, initial_state=hidden)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
