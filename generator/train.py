@@ -21,6 +21,9 @@ TRAINING_INFO_FILE = 'training_info.pkl'
 DECODER_NUM_LAYERS = 1
 TEACHER_FORCING = False
 
+optimizer = tf.keras.optimizers.Adam()
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
     training_info['ref_word2idx'] = ref_word2idx
@@ -48,7 +51,6 @@ def loss_function(loss_object, real, pred):
 def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch):
   loss = 0
   print('teacher_force_prob', teacher_force_prob)
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
@@ -114,7 +116,6 @@ if __name__ == '__main__':
     training_info = load_training_info(TRAINING_INFO_FILE)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units)
     decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, training=True)
-    optimizer = tf.keras.optimizers.Adam()
     # prepare to train
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
@@ -133,7 +134,6 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            print(batch)
             batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
             total_loss += batch_loss
             if (batch+1) % 100 == 0:
