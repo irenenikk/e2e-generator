@@ -53,6 +53,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    print(dec_hidden.shape)
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     all_preds = None
     all_targets = None
@@ -132,6 +133,7 @@ if __name__ == '__main__':
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
+            print(batch)
             batch_loss, all_preds, all_targets, all_inputs, grads = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, batch)
             total_loss += batch_loss
             if (batch+1) % 100 == 0:
