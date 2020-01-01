@@ -138,22 +138,22 @@ if __name__ == '__main__':
               preds = all_preds.numpy()
               targets = all_targets.numpy()
               inputs = all_inputs.numpy()
-                print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
-                print('----------')
-                # show bleu score for a random sentence in batch
-                b = np.random.choice(len(all_preds))
-                mr_info = ' '.join([mr_idx2word[t] for t in inp.numpy()[b] if t != 0])
-                training_pred = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
-                print('prediction made in training: ', training_pred)
-                pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
-                print('prediction in evaluation: ', pred_sentence)
-                input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
-                print('input: ', input_sentence)
-                target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
-                print('target: ', target_sentence)
-                bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
-                print('Bleu score', bleu)
-                print('----------')
+              print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
+              print('----------')
+              # show bleu score for a random sentence in batch
+              b = np.random.choice(len(all_preds))
+              mr_info = ' '.join([mr_idx2word[t] for t in inp.numpy()[b] if t != 0])
+              training_pred = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
+              print('prediction made in training: ', training_pred)
+              pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
+              print('prediction in evaluation: ', pred_sentence)
+              input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
+              print('input: ', input_sentence)
+              target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
+              print('target: ', target_sentence)
+              bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
+              print('Bleu score', bleu)
+              print('----------')
         if epoch % 2 == 0 and TEACHER_FORCING:
               teacher_force_prob *= 0.9
         # saving (checkpoint) the model every 2 epochs
