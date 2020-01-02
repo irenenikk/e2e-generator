@@ -22,13 +22,13 @@ Some parts of the implementation of slug2slug are used for slot alignment. The [
 The training of the model is done using the script `generator/train.py`. The trained model is saved in checkpoints in the folder `generator/training_checkpoints`, and some necessary information is stored in training_info.pkl.
 
 ```
-$ python generator/generate.py rest_e2e/trainset.csv
+$ python generator/train.py rest_e2e/trainset.csv
 ```
 
 
 ## Generating utterances
 
-Utterance generation is done using the script `generator/generate.py`. You need the file `training_info.pkl` created in training, which involves information such as model hyperparameters and dataset vocabulary.
+Utterance generation is done using the script `generator/generate.py`. In addition to the checkpoints, you need the file `training_info.pkl` created in training, which involves information such as model hyperparameters and dataset vocabulary. If your filenames match the ones given in training you don't have to specify the path to the checkpoints or the training info file.
 
 ```
 $ python generator/generate.py rest_e2e/devset.csv training_checkpoints  training_info.pkl
