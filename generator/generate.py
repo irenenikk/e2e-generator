@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from data_preprocessing import preprocess_mr, get_slots
 from postprocessing import postprocess_utterance
 import sys
-from data_loader import load_data_tensors, load_text_data
+from data_manager import load_data_tensors, load_text_data
 from models import Encoder, BahdanauAttention, Decoder
 import time
 import os
