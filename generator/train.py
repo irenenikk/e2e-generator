@@ -67,6 +67,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
       else:
         #dec_input = tf.expand_dims(predicted_tokens, 1)
         dec_input = predicted_tokens
+      '''
       if all_preds is None:
             #all_preds = tf.expand_dims(predicted_tokens, 1)
             all_preds = predicted_tokens
@@ -77,6 +78,7 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
           all_preds = tf.concat([all_preds, predicted_tokens], axis=1)
           all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
           all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
+      '''
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -135,12 +137,15 @@ if __name__ == '__main__':
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
             batch_loss, all_preds, all_targets, all_inputs = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            '''
             preds = all_preds.numpy()
             targets = all_targets.numpy()
             inputs = all_inputs.numpy()
+            '''
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
+                '''
                 print('----------')
                 # show bleu score for a random sentence in batch
                 b = np.random.choice(len(all_preds))
@@ -149,17 +154,16 @@ if __name__ == '__main__':
                 print('prediction made in training: ', training_pred)
                 target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
                 print('target: ', target_sentence)
-                '''
                 pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
                 print('prediction in evaluation: ', pred_sentence)
                 input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
                 print('input: ', input_sentence)
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
-                '''
                 print('----------')
-        if epoch % 2 == 0:
-              teacher_force_prob *= 0.9
+                '''
+        #if epoch % 2 == 0:
+        #      teacher_force_prob *= 0.9
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
