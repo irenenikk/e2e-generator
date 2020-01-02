@@ -1,0 +1,111 @@
+{
+  "names": [
+    "name",
+    "release_year",
+    "exp_release_date",
+    "developer",
+    "esrb",
+    "rating",
+    "genres",
+    "player_perspective",
+    "has_multiplayer",
+    "platforms",
+    "available_on_steam",
+    "has_linux_release",
+    "has_mac_release"
+  ],
+  "list_slots": [
+    "genres",
+    "player_perspective",
+    "platforms"
+  ],
+  "da_constraints": {
+    "confirm": {
+      "mandatory": [
+        "name"
+      ],
+      "excluded": [
+        "rating"
+      ]
+    },
+    "give_opinion": {
+      "mandatory": [
+        "name",
+        "rating"
+      ],
+      "excluded": [
+        "exp_release_date"
+      ]
+    },
+    "inform": {
+      "mandatory": [
+        "name",
+        "exp_release_date",
+        "genres"
+      ],
+      "excluded": []
+    },
+    "recommend": {
+      "mandatory": [
+        "name"
+      ],
+      "excluded": [
+        "rating",
+        "exp_release_date"
+      ]
+    },
+    "request": {
+      "mandatory": [
+        "specifier"
+      ],
+      "excluded": [
+        "name",
+        "rating",
+        "exp_release_date"
+      ]
+    },
+    "request_attribute": {
+      "mandatory": [],
+      "excluded": [
+        "name",
+        "rating"
+      ]
+    },
+    "request_explanation": {
+      "mandatory": [
+        "rating"
+      ],
+      "excluded": [
+        "name",
+        "exp_release_date"
+      ]
+    },
+    "suggest": {
+      "mandatory": [
+        "name"
+      ],
+      "excluded": [
+        "rating",
+        "exp_release_date"
+      ]
+    },
+    "verify_attribute": {
+      "mandatory": [
+        "name",
+        "rating"
+      ],
+      "excluded": [
+        "exp_release_date"
+      ]
+    }
+  },
+  "value_constraints": {
+    "dialogue_acts": {
+      "request_attribute": 0
+    },
+    "slots": {
+      "player_perspective": 1,
+      "platforms": 1
+    }
+  }
+}
