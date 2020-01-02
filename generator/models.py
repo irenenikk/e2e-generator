@@ -36,7 +36,7 @@ class BahdanauAttention(layers.Layer):
     # hidden is two dimensional, storing both hidden states and memory
     # only use the hidden state when calculating attention
     # it has to be expanded because the output contains time axis information
-    hidden_with_time_axis = tf.expand_dims(hidden[-1], 1)
+    hidden_with_time_axis = tf.expand_dims(hidden, 1)
     score = self.V(tf.nn.tanh(self.W1(output) + self.W2(hidden_with_time_axis)))
     attention_weights = tf.nn.softmax(score, axis=1)
     context_vector = attention_weights * output
@@ -69,7 +69,7 @@ class Decoder(tf.keras.Model):
   def call(self, x, hidden, enc_output):
     #print('x', x.shape)
     #print('hidden ', hidden)
-    context_vector, attention_weights = self.attention([hidden], enc_output)
+    context_vector, attention_weights = self.attention(hidden, enc_output)
     x = self.embedding(x)
     #print('x embedding', x.shape)
     expanded = tf.expand_dims(context_vector, 1)
@@ -78,7 +78,7 @@ class Decoder(tf.keras.Model):
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
     #output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
-    output, state = self.gru(x)
+    output, state = self.gru(x, initial_state=hidden)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
