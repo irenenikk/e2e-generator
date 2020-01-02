@@ -54,31 +54,12 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
     dec_hidden = [[state_h, state_c]]*DECODER_NUM_LAYERS
     # initialize using the concatenated forward and backward states
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
-    all_preds = None
-    all_targets = None
-    all_inputs = None
     for t in range(1, targ.shape[1]):
       predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_output)
       # use log cross-entropy loss
       loss += loss_function(targ[:, t], predictions)
       #predicted_token = tf.argmax(predictions, axis=1)
-      pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
-      predicted_tokens = tf.transpose(tf.argmax(pred_dist.sample(1), axis=2))
-      if np.random.uniform() < teacher_force_prob:
-        dec_input = tf.expand_dims(targ[:, t], 1)
-      else:
-        #dec_input = tf.expand_dims(predicted_tokens, 1)
-        dec_input = predicted_tokens
-      if all_preds is None:
-            #all_preds = tf.expand_dims(predicted_tokens, 1)
-            all_preds = predicted_tokens
-            all_targets = tf.expand_dims(targ[:, t], 1)
-            all_inputs = dec_input
-      else:
-          #all_preds = tf.concat([all_preds, tf.expand_dims(predicted_tokens, 1)], axis=1)
-          all_preds = tf.concat([all_preds, predicted_tokens], axis=1)
-          all_targets = tf.concat([all_targets, tf.expand_dims(targ[:, t], 1)], axis=1)
-          all_inputs = tf.concat([all_inputs, tf.cast(dec_input, all_inputs.dtype)], axis=1)
+      dec_input = tf.expand_dims(targ[:, t], 1)
   batch_loss = (loss / int(targ.shape[1]))
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
@@ -144,24 +125,6 @@ if __name__ == '__main__':
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
                 print('----------')
-                # show bleu score for a random sentence in batch
-                b = np.random.choice(len(all_preds))
-                mr_info = ' '.join([mr_idx2word[t] for t in inp.numpy()[b] if t != 0])
-                training_pred = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
-                print('prediction made in training: ', training_pred)
-                target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
-                print('target: ', target_sentence)
-                '''
-                pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
-                print('prediction in evaluation: ', pred_sentence)
-                input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
-                print('input: ', input_sentence)
-                bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
-                print('Bleu score', bleu)
-                '''
-                print('----------')
-        if epoch % 2 == 0:
-              teacher_force_prob *= 0.9
         # saving (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
