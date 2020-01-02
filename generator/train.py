@@ -35,9 +35,9 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
 
 def loss_function(real, pred):
   loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
-  # ignore padded parts of the input
-  # this can be done because 0 is a special index
   loss_ = loss_object(real, pred)
+  # ignore padded parts of the input
+  # this can be done because 0 is a special token
   pad_mask = tf.math.logical_not(tf.math.equal(real, 0))
   pad_mask = tf.cast(pad_mask, dtype=loss_.dtype)
   loss_ *= pad_mask
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 200)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
     print('Found input data of shape', input_tensor.shape)
     print('Found target data of shape', target_tensor.shape)
     print('Creating dataset')
@@ -139,7 +139,7 @@ if __name__ == '__main__':
             targets = all_targets.numpy()
             inputs = all_inputs.numpy()
             total_loss += batch_loss
-            if batch % 50 == 0:
+            if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
                 print('----------')
                 # show bleu score for a random sentence in batch
@@ -147,14 +147,16 @@ if __name__ == '__main__':
                 mr_info = ' '.join([mr_idx2word[t] for t in inp.numpy()[b] if t != 0])
                 training_pred = [ref_idx2word[p] for p in preds[b] if p > 0 and p != end_id]
                 print('prediction made in training: ', training_pred)
+                target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
+                print('target: ', target_sentence)
+                '''
                 pred_sentence, _, _ = evaluate(encoder, decoder, mr_info, training_info)
                 print('prediction in evaluation: ', pred_sentence)
                 input_sentence = [ref_idx2word[t] for t in inputs[b] if t > 0]
                 print('input: ', input_sentence)
-                target_sentence = [ref_idx2word[t] for t in targets[b] if t > 0 and t != end_id]
-                print('target: ', target_sentence)
                 bleu = nltk.translate.bleu_score.sentence_bleu([target_sentence], pred_sentence)
                 print('Bleu score', bleu)
+                '''
                 print('----------')
         if epoch % 2 == 0:
               teacher_force_prob *= 0.9
