@@ -16,7 +16,7 @@ import ipdb;
 from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
 
-BATCH_SIZE = 1
+BATCH_SIZE = 10
 # optimal beam size found by Juraska
 BEAM_SIZE = 10
 

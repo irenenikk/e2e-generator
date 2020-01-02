@@ -9,20 +9,19 @@ class Encoder(tf.keras.Model):
     self.hidden_size = hidden_size
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     # use a bidirectional lstm
-    gru_layer = layers.GRU(hidden_size, 
+    lstm_layer = layers.LSTM(hidden_size, 
                             return_sequences=True, 
-                            return_state=True, 
-                            recurrent_initializer='glorot_uniform')
-    self.bidirectional_gru = layers.Bidirectional(gru_layer)
+                            return_state=True)
+    self.bidirectional_lstm = layers.Bidirectional(lstm_layer)
 
   def call(self, x, hidden):
     x = self.embedding(x)
-    output, forward_hidden, backward_hidden = self.bidirectional_gru(x, initial_state=hidden)
-    return output, forward_hidden, backward_hidden
+    output, forward_hidden, forward_mem, backward_hidden, backward_mem = self.bidirectional_lstm(x, initial_state=hidden)
+    return output, forward_hidden, forward_mem, backward_hidden, backward_mem
 
   def initialize_hidden_state(self, batch_size):
-    forward_state = [tf.zeros([batch_size, self.hidden_size])]
-    backward_state = [tf.zeros([batch_size, self.hidden_size])]
+    forward_state = [tf.zeros([batch_size, self.hidden_size])] * 2
+    backward_state = [tf.zeros([batch_size, self.hidden_size])] * 2
     return forward_state + backward_state
 
 class BahdanauAttention(layers.Layer):
@@ -54,11 +53,7 @@ class Decoder(tf.keras.Model):
     self.embedding_dim = embedding_dim
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
     self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
-    #self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
-    self.gru = tf.keras.layers.GRU(self.hidden_size,
-                                   return_sequences=True,
-                                   return_state=True,
-                                   recurrent_initializer='glorot_uniform')
+    self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.fc = layers.Dense(vocab_size)
     self.dropout = tf.keras.layers.Dropout(0.3)
     # used for attention
@@ -69,20 +64,20 @@ class Decoder(tf.keras.Model):
   def call(self, x, hidden, enc_output):
     #print('x', x.shape)
     #print('hidden ', hidden)
-    context_vector, attention_weights = self.attention(hidden, enc_output)
+    # use the last state of the encoder to calculate the context vector
+    context_vector, attention_weights = self.attention(hidden[-1][0], enc_output)
     x = self.embedding(x)
     #print('x embedding', x.shape)
     #print('expanded shape', expanded.shape)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    #output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
-    output, state = self.gru(x, initial_state=hidden)
+    output, *states = self.rnn(x, initial_state=hidden)
+    #output, state = self.gru(x, initial_state=hidden)
     #print('state.shape', state.shape)
     #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
     #print('otuput.shape', output.shape)
     x = self.dropout(x, training=self.training)
     x = self.fc(output)
-    # return the last state
-    return x, state, attention_weights
+    return x, states, attention_weights

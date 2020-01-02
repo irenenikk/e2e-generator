@@ -17,7 +17,7 @@ BATCH_SIZE = 32
 embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
-DECODER_NUM_LAYERS = 1
+DECODER_NUM_LAYERS = 4
 
 def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
     training_info = {}
@@ -48,9 +48,11 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
   loss = 0
   print('teacher_force_prob', teacher_force_prob)
   with tf.GradientTape() as tape:
-    enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
+    enc_output, forward_hidden, forward_mem, backward_hidden, backward_mem = encoder(inp, enc_hidden)
+    state_h = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    state_c = tf.keras.layers.Concatenate()([forward_mem, backward_mem])
+    dec_hidden = [[state_h, state_c]]*DECODER_NUM_LAYERS
     # initialize using the concatenated forward and backward states
-    dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([ref_word2idx['<start>']] * BATCH_SIZE, 1)
     all_preds = None
     all_targets = None
@@ -90,7 +92,7 @@ if __name__ == '__main__':
     data_file = sys.argv[1]
     checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, 200)
     print('Found input data of shape', input_tensor.shape)
     print('Found target data of shape', target_tensor.shape)
     print('Creating dataset')
