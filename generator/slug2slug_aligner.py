@@ -24,19 +24,9 @@ TTEST_SCORES_DIR = os.path.join(ROOT_DIR, 'ttest', 'scores')
 
 # Dataset paths
 E2E_DATA_DIR = os.path.join(DATA_DIR, 'rest_e2e')
-TV_DATA_DIR = os.path.join(DATA_DIR, 'tv')
-LAPTOP_DATA_DIR = os.path.join(DATA_DIR, 'laptop')
-HOTEL_DATA_DIR = os.path.join(DATA_DIR, 'hotel')
-VIDEO_GAME_DATA_DIR = os.path.join(DATA_DIR, 'video_game')
-
-# Script paths
-METRICS_SCRIPT_PATH = os.path.join(METRICS_DIR, 'measure_scores.py')
 
 # Constants
 COMMA_PLACEHOLDER = ' __comma__'
-DELEX_PREFIX = '__slot_'    # Important to use special symbols that do not get tokenized (such as '_')
-DELEX_SUFFIX = '__'
-EMPH_TOKEN = '__emph__'
 CONTRAST_TOKEN = '__contrast__'
 CONCESSION_TOKEN = '__concession__'
 
@@ -85,7 +75,7 @@ def __preprocess_utterance(utt):
 def extract_delex_placeholders(utt):
     """Extracts delexicalized placeholders from the utterance."""
 
-    pattern = DELEX_PREFIX + '.*?' + DELEX_SUFFIX
+    pattern = '(name|near)_place'
 
     return set(re.findall(pattern, utt))
 

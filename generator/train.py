@@ -1,7 +1,7 @@
 import pandas as pd
 import sys
 import numpy as np
-from data_loader import create_dataset, load_data_tensors, max_length
+from data_manager import create_dataset, load_data_tensors, max_length
 import tensorflow as tf
 import tensorflow_probability as tfp
 from models import Encoder, BahdanauAttention, Decoder

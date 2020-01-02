@@ -23,14 +23,16 @@ def delexicalize_mr(mr_info, slots):
             mr_info = mr_info.replace(slots[mr], mr + MR_SUFFIX)
     return mr_info
 
-def get_slots(mr_info):
+def get_slots(mr_info, remove_whitespace=True):
     """ Build a dict containing all the slots in an MR. """
     slots = {}
     MRs = mr_info.split(', ')
     for mr in MRs:
         slot = mr[:mr.find('[')]
         value = mr[mr.find('[')+1:mr.find(']')]
-        slots[slot] = value.replace(' ', '_')
+        if remove_whitespace:
+            value = value.replace(' ', '_')
+        slots[slot] = value
     return slots
 
 def delexicalize_ref(row, mr):
