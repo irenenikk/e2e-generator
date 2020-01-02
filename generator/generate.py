@@ -178,6 +178,7 @@ if __name__ == "__main__":
         generated = generate_reference_no_beam(encoder, decoder, test_data['mr'].iloc[i], training_info)
         print(test_data['mr'].iloc[i])
         print(generated)
-        bleu = nltk.translate.bleu_score.sentence_bleu([test_data['mr'].iloc[i]], generated)
+        print(test_data['ref'].iloc[i])
+        bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
         print(bleu)
         print('------------')
