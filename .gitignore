@@ -1,7 +1,7 @@
 e2e-dataset/
 tensorflow-tutorial/
-training_checkpoints/
-training_info*
+*training_checkpoints*/
+*training_info*
 *.idea
 *__pycache__*
 .DS_Store

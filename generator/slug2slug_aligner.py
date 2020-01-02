@@ -1,3 +1,8 @@
+'''
+This file contains a lighter version of the slot alignment component by Juraj Juraska, licensed under MIT.
+You can find the full project under the same folder.
+'''
+
 import re
 from nltk.tokenize import word_tokenize, sent_tokenize
 import string
