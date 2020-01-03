@@ -33,7 +33,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
     with open(TRAINING_INFO_FILE, 'wb') as f:
         pickle.dump(training_info, f)
 
-def loss_function(real, pred):
+def loss_function(real, pred, regularize):
   loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   loss_ = loss_object(real, pred)
   # ignore padded parts of the input
@@ -41,6 +41,10 @@ def loss_function(real, pred):
   pad_mask = tf.math.logical_not(tf.math.equal(real, 0))
   pad_mask = tf.cast(pad_mask, dtype=loss_.dtype)
   loss_ *= pad_mask
+  # use l2 regularizer as suggested in the sclstm paper
+  if regularize:  
+    regularizer = tf.nn.l2_loss(weights)
+    loss_ =  loss_ + 0.001 * regularizer
   return tf.reduce_mean(loss_)
 
 @tf.function

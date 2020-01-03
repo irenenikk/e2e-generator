@@ -16,10 +16,9 @@ sys.path.append('./')
 
 BATCH_SIZE = 1
 # optimal beam size found by Juraska
-BEAM_SIZE = 1
-# this is used in beam search
-# the value is found to be optimal for most use cases by Wen et al.
-alpha = 0.6
+BEAM_SIZE = 10
+END_SYMBOL = '<end>'
+START_SYMBOL = '<start>'
 
 class BeamObj:
     def __init__(self, utterance, probability, last_id):
@@ -32,16 +31,48 @@ class BeamObj:
     def __repr__(self):
         return '{}({})'.format(self.utterance, self.probability)
 
-def search_candidates(curr_prob, curr_utterance, predictions, ref_idx2word):
-    """ Calculate the log probability of each sequence and return in descending order. """ 
+def search_candidates2(curr_prob, curr_utterance, predictions, ref_idx2word):
+    """ Find the possible extensions to an utterance and their log-probabilities. """ 
     candidates = []
     # calculate probabilites if new predictions were added
     # check for all new predictions in the beam 
-    if predictions.shape[0] > 1:
+    if predictions.shape[0] != 1:
         raise ValueError('Batches not supported in beam search. ')
     for word_id in range(1, predictions.shape[1]):
         pred = predictions[0][word_id]
         new_prob = curr_prob + np.log(pred)
+        new_utterance = curr_utterance + " " + ref_idx2word[word_id]
+        candidates += [BeamObj(new_utterance, new_prob, word_id)]
+    return candidates
+
+def search_candidates(curr_prob, curr_utterance, predictions, ref_idx2word, beam_size):
+    """ Find the possible extensions to an utterance and their log-probabilities. """ 
+    candidates = []
+    # calculate probabilites if new predictions were added
+    # check for all new predictions in the beam 
+    if predictions.shape[0] != 1:
+        raise ValueError('Batches not supported in beam search. ')
+    preds = predictions[0]
+    ids_by_prob = np.argsort(-preds)[:5]
+    for word_id in ids_by_prob:
+        pred = preds[word_id]
+        new_prob = curr_prob + pred
+        new_utterance = curr_utterance + " " + ref_idx2word[word_id]
+        candidates += [BeamObj(new_utterance, new_prob, word_id)]
+    return candidates
+
+def search_candidates3(curr_prob, curr_utterance, predictions, ref_idx2word, beam_size):
+    """ Find the possible extensions to an utterance and their log-probabilities. """ 
+    candidates = []
+    # calculate probabilites if new predictions were added
+    # check for all new predictions in the beam 
+    if predictions.shape[0] != 1:
+        raise ValueError('Batches not supported in beam search. ')
+    preds = predictions[0]
+    ids_by_prob = np.argsort(-preds)[:beam_size]
+    for word_id in ids_by_prob:
+        pred = preds[word_id]
+        new_prob = curr_prob + pred
         new_utterance = curr_utterance + " " + ref_idx2word[word_id]
         candidates += [BeamObj(new_utterance, new_prob, word_id)]
     return candidates
@@ -58,65 +89,128 @@ def score_prediction(prediction, mr_slots):
     #print('Prediction', prediction)
     #print('Unaligned slots:', unaligned_slots)
     #print('Hallucinated slots:', hallucinated_slots)
-    #import ipdb; ipdb.set_trace()
     return N/((len(unaligned_slots)+1)*(len(hallucinated_slots)+1))
 
-def evaluate(encoder, decoder, mr_info, training_info):
+def generation_done(beam_obj, training_info, end_token):
+    """ Stop when end token is reached or the sentence is the maximal length. """
+    return beam_obj.last_id == end_token or len(beam_obj.utterance) == training_info['max_length_targ']
+
+def get_length_normalisation_denominator(utterance, alpha=20):
+    """ As done in Google's NMT paper. """
+    n = ((5 + len(utterance.split(" ")))**alpha)/((5+1)**alpha)
+    return n
+
+def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
     processed_mr_info = preprocess_mr(mr_info)
-#    print(mr_info)
-#    print(training_info['mr_word2idx'].keys())
     inputs = [training_info['mr_word2idx'][i.strip()] for i in processed_mr_info.split(' ')]
     inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs],
                                                            maxlen=training_info['max_length_inp'],
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
-    start_token = training_info['ref_word2idx']['<start>']
-    end_token = training_info['ref_word2idx']['<end>']
+    start_token = training_info['ref_word2idx'][START_SYMBOL]
+    end_token = training_info['ref_word2idx'][END_SYMBOL]
     beam = [BeamObj('', 0, start_token)]
     hidden = encoder.initialize_hidden_state(1)
     enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
-    result = ''
-    for t in range(1, training_info['max_length_targ']):
+    while(True):
         new_beams = []
         for beam_obj in beam:
-            # stop generating at the end token
-            if beam_obj.last_id == end_token:
+            #print('---------')
+            #print('beam obj', beam_obj)
+            if generation_done(beam_obj, training_info, end_token):
                 new_beams += [beam_obj]
-                continue
-            predictions, dec_hidden, attention_weights = decoder(tf.expand_dims([beam_obj.last_id], 0), dec_hidden, enc_out)
-            curr_prob = beam_obj.probability
-            curr_utterance = beam_obj.utterance
-            # the network gives back logits instead of probabilities
-            # so start by calculating probabilities
-            preds = tf.nn.softmax(predictions, axis=1).numpy()
-            # find the candidates for this prediction
-            candidates = search_candidates(curr_prob, curr_utterance, preds, training_info['ref_idx2word'])
-            new_beams += candidates
+            else:
+                predictions, dec_hidden, attention_weights = decoder(tf.expand_dims([beam_obj.last_id], 0), dec_hidden, enc_out)
+                curr_prob = beam_obj.probability
+                curr_utterance = beam_obj.utterance
+                # the network gives back logits instead of probabilities
+                # so start by calculating probabilities
+                preds = tf.nn.log_softmax(predictions, axis=1).numpy()
+                # find the candidates for this prediction
+                candidates = search_candidates(curr_prob, curr_utterance, preds, training_info['ref_idx2word'], beam_size)
+                #print('candidates', candidates)
+                new_beams += candidates
+            #print('new beams', new_beams)
         # normalize the probability in order not to favor short sequences.
-        new_beams = [BeamObj(b.utterance, b.probability/len(b.utterance.split(" "))**alpha, b.last_id) for b in new_beams]
-        new_beams.sort(key=lambda x: x.probability, reverse=True)
-        beam = new_beams[:BEAM_SIZE]
+        #print('VANILLA')
+        #print([BeamObj(b.utterance, b.probability, b.last_id) for b in new_beams])
+        normalised_beams = [BeamObj(b.utterance, b.probability/get_length_normalisation_denominator(b.utterance), b.last_id) for b in new_beams]
+        #print('NORMALISED')
+        #print(normalised_beams)
+        beam = sorted(normalised_beams, key=lambda b: -b.probability)[:beam_size]
+        #print('beam', beam)
+        #same = len(set([len(b.utterance.split(" "))for b in new_beams])) == 1
+        all_generated = [generation_done(beam_obj, training_info, end_token) for beam_obj in beam]
+        if np.all(all_generated):
+            break
     return beam, processed_mr_info, attention_plot
 
-def generate_reference(encoder, decoder, mr_info, training_info):
+def create_results(predicted_ids, results):
+    for i in range(len(predicted_ids)):
+        idd = predicted_ids[i]
+        utt = results[i]
+        if not results[i].endswith(END_SYMBOL):
+            results[i] += " " + training_info['ref_idx2word'][idd]
+    return results
+
+def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
+    attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
+    processed_mr_info = preprocess_mr(mr_info)
+    inputs = [training_info['mr_word2idx'][i.strip()] for i in processed_mr_info.split(' ')]
+    inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs],
+                                                           maxlen=training_info['max_length_inp'],
+                                                           padding='post')
+    inputs = tf.convert_to_tensor(inputs)
+    inputs = tf.tile(inputs, tf.constant([beam_size, 1]))
+    hidden = encoder.initialize_hidden_state(beam_size)
+    enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
+    dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    dec_input = tf.expand_dims([training_info['ref_word2idx'][START_SYMBOL]], 0)
+    dec_input = tf.tile(dec_input, tf.constant([beam_size, 1]))
+    results = ['']*beam_size
+    for t in range(training_info['max_length_targ']):
+        predictions, dec_hidden, attention_weights = decoder(dec_input,
+                                                             dec_hidden,
+                                                             enc_out)
+        #predicted_id = tf.argmax(predictions[0]).numpy()
+        pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
+        predicted_ids = tf.argmax(pred_dist.sample(1)[0], axis=1).numpy()
+        results = create_results(predicted_ids, results)
+        dec_input = tf.expand_dims(predicted_ids, 1)
+    return results, mr_info, attention_plot
+
+def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_size=10):
     """ Generate new reference, and postprocess it to form a complete sentence."""
-    beam, processed_mr_info, attention_plot = evaluate(encoder, decoder, mr_info, training_info)
+    beam, processed_mr_info, attention_plot = evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size)
     mr_slots = get_slots(mr_info, remove_whitespace=False)
     # postprocess and score the beam
     for beam_obj in beam:
-        #import ipdb; ipdb.set_trace()
         processed_utterance = postprocess_utterance(beam_obj.utterance, mr_slots)
-        beam_obj.processed_utterance = processed_utterance
         score = score_prediction(processed_utterance, mr_slots)
+        beam_obj.utterance = processed_utterance
         beam_obj.probability += np.log(score)
     # order again by probability
-    beam.sort(key=lambda x: x.probability, reverse=True)
-    best_prediction = beam[0].processed_utterance
-    #attention_plot = attention_plot[:len(best_prediction.split(' ')), :len(mr_info.split(' '))]
-    #plot_attention(attention_plot, mr_info.split(' '), best_prediction.split(' '))
-    return best_prediction
+    sorted_beam = sorted(beam, key=lambda x: -x.probability)
+    #best_prediction = beam[0].processed_utterance
+    return beam[0].utterance, beam[0].probability
+
+def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
+    """ Generate new reference, and postprocess it to form a complete sentence."""
+    results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, 10)
+    print(results)
+    mr_slots = get_slots(mr_info, remove_whitespace=False)
+    scores = np.zeros(len(results))
+    utterances = []
+    for i, ref in enumerate(results):
+        processed_utterance = postprocess_utterance(ref, mr_slots)
+        score = score_prediction(processed_utterance, mr_slots)
+        scores[i] = score
+        utterances.append(processed_utterance)
+    # postprocess and score the beam
+    best_pred_id = np.argsort(-scores)[0]
+    return utterances[best_pred_id], None
 
 def load_training_info(training_info_file):
     with open(training_info_file, 'rb') as f:
@@ -124,12 +218,14 @@ def load_training_info(training_info_file):
 
 def print_generations(test_data, encoder, decoder, training_info):
     for i in range(len(test_data)):
-        generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
         print(test_data['mr'].iloc[i])
-        print(generated)
+        generated = generate_reference_with_sampling(encoder, decoder, test_data['mr'].iloc[i], training_info)
+        #print('with beam 1', generated)
+        #generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info, 3)
+        print(generated[0])
         if 'ref' in test_data.columns:
             print(test_data['ref'].iloc[i])
-            bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
+            bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated[0])
             print(bleu)
         print('------------')
 

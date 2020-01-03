@@ -1,7 +1,1 @@
-## Implementation notes
-
-### Techniques to improve the system
-
-- [X] Delexicalisation
-- [ ] Ranking
-- [ ] Beam search
+With greedy search, BLEU score mean on development set is 0.5215228957738992 0.011869280059007385
