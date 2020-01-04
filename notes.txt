@@ -1,4 +1,5 @@
 With greedy search, BLEU score mean on development set is 0.5215228957738992 0.011869280059007385
+With sampling, BLEU score mean on development set is 0.48147223604600875 0.012254735080703794
 
 Two utterances created by sampling from the same MRs:
 name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]

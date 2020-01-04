@@ -254,7 +254,6 @@ if __name__ == "__main__":
                         training_info['embedding_dim'], 
                         training_info['units'])
     decoder = Decoder(len(training_info['ref_word2idx'])+1, 
-                        training_info['decoder_layers'], 
                         training_info['embedding_dim'], 
                         training_info['units']*2, 
                         training=False)
