@@ -31,7 +31,7 @@ parser.add_argument("-num", "--num-examples", type=int,
                     help="Test using only a subsample of training data (for development purposes)")
 parser.add_argument("-f", "--metrics-file", default='val_metrics',
                     help="File to save validation bleus and batch losses to")
-parser.add_argument("-tf", "--teacher-forcing", type=bool, default=True,
+parser.add_argument("-no-tf", "--no-teacher-forcing", default=False, action='store_true',
                     help="Whether to use teacher forcing in training or not")
 
 def save_training_info(training_info_file, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
@@ -92,7 +92,7 @@ def save_training_metrics(losses, val_bleus, metrics_file):
     df = pd.DataFrame(list(zip(val_bleus, losses)), columns=['bleu', 'batch_loss'])
     df.write(metrics_file)
 
-def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples, teacher_forcing):
+def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples, no_teacher_forcing):
     print('Loading data')
     input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_training_examples)
     print('Found input data of shape', input_tensor.shape)
@@ -153,7 +153,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
                   print('Validation bleu score', val_bleu)
                   val_bleus.append(val_bleu)
                   losses.append(batch_loss)
-        if teacher_forcing:
+        if not no_teacher_forcing:
           if epoch % 2 == 0:
                 teacher_force_prob *= 0.9
         # save the model every 2 epochs
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     restore_checkpoint = args.restore_checkpoint
     num_examples = args.num_examples
     metrics_file = args.metrics_file
-    teacher_forcing = args.teacher_forcing
+    no_teacher_forcing = args.no_teacher_forcing
     checkpoint_dir = 'training_checkpoints' + identifier
     training_info_file = 'training_info' + identifier + '.pkl'
     losses, val_bleus = train(data_file,
@@ -181,5 +181,5 @@ if __name__ == '__main__':
                               training_info_file,
                               restore_checkpoint,
                               num_examples,
-                              teacher_forcing)
+                              no_teacher_forcing)
     save_training_metrics(losses, val_bleus, metrics_file)
