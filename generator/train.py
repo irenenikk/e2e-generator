@@ -1,7 +1,7 @@
 import pandas as pd
 import sys
 import numpy as np
-from data_manager import create_dataset, load_data_tensors, max_length
+from data_manager import create_dataset, load_data_tensors, max_length, load_text_data
 import tensorflow as tf
 import tensorflow_probability as tfp
 from models import Encoder, BahdanauAttention, Decoder
@@ -10,16 +10,30 @@ import os
 import pickle
 import json
 import nltk
-from generate import evaluate, load_training_info
+from generate import calculate_mean_bleu_score, load_training_info
+import argparse
 
 EPOCHS = 5
 BATCH_SIZE = 32
 embedding_dim = 128
 units = 512
 TRAINING_INFO_FILE = 'training_info.pkl'
-DECODER_NUM_LAYERS = 1
 
-def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units, decoder_layers):
+parser = argparse.ArgumentParser(description='Train the model for E2E restaurant description generation')
+parser.add_argument("training_data", type=str,
+                    help="The path to the training data file")
+parser.add_argument("val_data", type=str,
+                    help="The path to the validation data file")
+parser.add_argument("-ckpt", "--checkpoint-dir", default='./training_checkpoints',
+                    help="Specify path to training checkpoint to recover training")
+parser.add_argument("-r", "--restore-checkpoint", default=True,
+                    help="Whether to start training from a previous checkpoint")
+parser.add_argument("-num", "--num-examples", type=int,
+                    help="Test using only a subsample of training data (for development purposes)")
+parser.add_argument("-f", "--metrics-file", default='val_metrics',
+                    help="File to save validation bleus and batch losses to")
+
+def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
     training_info = {}
     training_info['ref_word2idx'] = ref_word2idx
     training_info['ref_idx2word'] = ref_idx2word
@@ -28,12 +42,11 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
     training_info['max_length_targ'] = max_length_targ
     training_info['max_length_inp'] = max_length_inp
     training_info['embedding_dim'] = embedding_dim
-    training_info['decoder_layers'] = decoder_layers
     training_info['units'] = units
     with open(TRAINING_INFO_FILE, 'wb') as f:
         pickle.dump(training_info, f)
 
-def loss_function(real, pred, regularize):
+def loss_function(real, pred):
   loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
   loss_ = loss_object(real, pred)
   # ignore padded parts of the input
@@ -41,16 +54,12 @@ def loss_function(real, pred, regularize):
   pad_mask = tf.math.logical_not(tf.math.equal(real, 0))
   pad_mask = tf.cast(pad_mask, dtype=loss_.dtype)
   loss_ *= pad_mask
-  # use l2 regularizer as suggested in the sclstm paper
-  if regularize:  
-    regularizer = tf.nn.l2_loss(weights)
-    loss_ =  loss_ + 0.001 * regularizer
   return tf.reduce_mean(loss_)
 
 @tf.function
-def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, sample_prediction=True):
+def train_step(encoder, decoder, optimizer, inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob, sample_prediction=True):
   loss = 0
-  print('teacher_force_prob', teacher_force_prob)
+  print('Teacher forcing probability', teacher_force_prob)
   with tf.GradientTape() as tape:
     enc_output, forward_hidden, backward_hidden = encoder(inp, enc_hidden)
     # initialize using the concatenated forward and backward states
@@ -74,16 +83,16 @@ def train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_
   variables = encoder.trainable_variables + decoder.trainable_variables
   gradients = tape.gradient(loss, variables)
   optimizer.apply_gradients(zip(gradients, variables))
-  return batch_loss, all_preds, all_targets, all_inputs
+  return batch_loss
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Please give path to data file as argument')
-        exit()
-    data_file = sys.argv[1]
-    checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
+def save_training_metrics(losses, val_bleus, metrics_file):
+    print('Saving metrics from', len(losses), 'batches to', metrics_file)
+    df = pd.DataFrame(val_bleus, losses, columns=['bleu', 'batch_loss'])
+    df.write(metrics_file)
+
+def train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_training_examples):
     print('Loading data')
-    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file)
+    input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_training_examples)
     print('Found input data of shape', input_tensor.shape)
     print('Found target data of shape', target_tensor.shape)
     print('Creating dataset')
@@ -103,38 +112,58 @@ if __name__ == '__main__':
                         max_length_targ, 
                         max_length_inp,
                         embedding_dim,
-                        units,
-                        DECODER_NUM_LAYERS)
+                        units)
     training_info = load_training_info(TRAINING_INFO_FILE)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units)
-    decoder = Decoder(len(ref_word2idx)+1, DECODER_NUM_LAYERS, embedding_dim, units*2, training=True)
+    decoder = Decoder(len(ref_word2idx)+1, embedding_dim, units*2, training=True)
     optimizer = tf.keras.optimizers.Adam()
     # prepare to train
     checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,
                                     decoder=decoder)
-    checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
-    if tf.train.latest_checkpoint(checkpoint_dir):
-          print('Restoring checkpoint')
+    if restore_checkpoint and tf.train.latest_checkpoint(checkpoint_dir):
+      print('Restoring checkpoint')
+      checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     print('Starting training')
     s = time.time()
     end_id = ref_word2idx['<end>']
     teacher_force_prob = 1
+    dev_data = load_text_data(dev_data_file, 200)
+    val_bleus = []
+    losses = []
     for epoch in range(EPOCHS):
         start = time.time()
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
         for (batch, (inp, targ)) in enumerate(train_dataset.take(steps_per_epoch)):
-            batch_loss, all_preds, all_targets, all_inputs = train_step(inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
+            batch_loss = train_step(encoder, decoder, optimizer, inp, targ, enc_hidden, ref_word2idx, ref_idx2word, teacher_force_prob)
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
+            # run through validation set every 500 batch  
+            if (epoch*len(input_tensor)//BATCH_SIZE + batch) % 500 == 0:
+                  val_bleu = calculate_mean_bleu_score(dev_data, encoder, decoder, training_info, sampling=True)
+                  print('Validation bleu score', val_bleu)
+                  val_bleus.append(val_bleu)
+                  losses.append(batch_loss)
         if epoch % 2 == 0:
               teacher_force_prob *= 0.9
-        #saving (checkpoint) the model every 2 epochs
+        # save the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
         print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
         print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
     print('Training took', (time.time() - s)/60, 'minutes')
+    return losses, val_bleus
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    data_file = args.training_data
+    dev_data_file = args.val_data
+    checkpoint_dir = args.checkpoint_dir
+    restore_checkpoint = args.restore_checkpoint
+    num_examples = args.num_examples
+    metrics_file = args.metrics_file
+    losses, val_bleus = train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_examples)
+    save_training_metrics(losses, val_bleus, metrics_file)

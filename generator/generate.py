@@ -147,12 +147,12 @@ def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
             break
     return beam, processed_mr_info, attention_plot
 
-def create_results(predicted_ids, results):
+def create_results(predicted_ids, results, training_info):
     for i in range(len(predicted_ids)):
         idd = predicted_ids[i]
         utt = results[i]
-        if not results[i].endswith(END_SYMBOL):
-            results[i] += " " + training_info['ref_idx2word'][idd]
+        if not results[i].endswith(END_SYMBOL) and idd != 0:
+            results[i] += training_info['ref_idx2word'][idd] +  " "
     return results
 
 def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
@@ -174,10 +174,9 @@ def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
         predictions, dec_hidden, attention_weights = decoder(dec_input,
                                                              dec_hidden,
                                                              enc_out)
-        #predicted_id = tf.argmax(predictions[0]).numpy()
         pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
         predicted_ids = tf.argmax(pred_dist.sample(1)[0], axis=1).numpy()
-        results = create_results(predicted_ids, results)
+        results = create_results(predicted_ids, results, training_info)
         dec_input = tf.expand_dims(predicted_ids, 1)
     return results, mr_info, attention_plot
 
@@ -198,8 +197,7 @@ def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam
 
 def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
     """ Generate new reference, and postprocess it to form a complete sentence."""
-    results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, 10)
-    print(results)
+    results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, 5)
     mr_slots = get_slots(mr_info, remove_whitespace=False)
     scores = np.zeros(len(results))
     utterances = []
@@ -210,7 +208,7 @@ def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
         utterances.append(processed_utterance)
     # postprocess and score the beam
     best_pred_id = np.argsort(-scores)[0]
-    return utterances[best_pred_id], None
+    return utterances[best_pred_id]
 
 def load_training_info(training_info_file):
     with open(training_info_file, 'rb') as f:
@@ -229,13 +227,15 @@ def print_generations(test_data, encoder, decoder, training_info):
             print(bleu)
         print('------------')
 
-def calculate_mean_bleu_score(test_data, encoder, decoder, training_info):
-    print('Calculating mean BLEU score for validation set')
+def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, sampling=True):
+    print('Calculating mean BLEU score for validation set of size', len(test_data))
     bleus = np.zeros(len(test_data))
     for i in range(len(test_data)):
-        if i % 100 == 0:
-            print('i:', i)
-        generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
+        generated = None
+        if sampling:
+            generated = generate_reference_with_sampling(encoder, decoder, test_data['mr'].iloc[i], training_info)
+        else:
+            generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
         bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
         bleus[i] = bleu
     return np.mean(bleus), np.var(bleus)
@@ -265,6 +265,6 @@ if __name__ == "__main__":
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
-    print_generations(test_data, encoder, decoder, training_info)
-    #bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info)
-    #print(bleu_mean, bleu_var)
+    #print_generations(test_data, encoder, decoder, training_info)
+    bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info)
+    print(bleu_mean, bleu_var)

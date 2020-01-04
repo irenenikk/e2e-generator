@@ -8,7 +8,6 @@ class Encoder(tf.keras.Model):
     super(Encoder, self).__init__()
     self.hidden_size = hidden_size
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
-    # use a bidirectional lstm
     gru_layer = layers.GRU(hidden_size, 
                             return_sequences=True, 
                             return_state=True, 
@@ -47,14 +46,11 @@ class Decoder(tf.keras.Model):
   """ Jurafsky et al's decoder is a 4-layer RNN with 512 LSTM cells. 
       In order to use the concatented forward and backward states from the encoder, 
       we've doubled the amount of cells in the decoder. """
-  def __init__(self, vocab_size, num_layers, embedding_dim, hidden_size, training):
+  def __init__(self, vocab_size, embedding_dim, hidden_size, training):
     super(Decoder, self).__init__()
     self.hidden_size = hidden_size
-    self.num_layers = num_layers
     self.embedding_dim = embedding_dim
     self.embedding = layers.Embedding(vocab_size, embedding_dim)
-    self.lstm_cells = [tf.keras.layers.LSTMCell(self.hidden_size) for _ in range(num_layers)]
-    #self.rnn = tf.keras.layers.RNN(self.lstm_cells, return_sequences=True, return_state=True)
     self.gru = tf.keras.layers.GRU(self.hidden_size,
                                    return_sequences=True,
                                    return_state=True,

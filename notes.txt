@@ -1,0 +1,17 @@
+With greedy search, BLEU score mean on development set is 0.5215228957738992 0.011869280059007385
+
+Two utterances created by sampling from the same MRs:
+name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]
+Alimentum is a restaurant near the Burger King here in the centre of the city .
+Near Burger King in city centre is the adult establishment Alimentum.
+0.5716220023135528
+------------
+name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]
+Alimentum is a non-child friendly place in the city centre area near Burger King .
+Alimentum is not family-friendly. Alimentum is in the city center and it is near Burger King.
+0.6052640699531351
+------------
+name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]
+Alimentum is a place for the whole being peaceful lunch . it is located near Burger King .
+Alimentum is not family-friendly, and is near the Burger King in the city centre.
+0.44228490161784506
