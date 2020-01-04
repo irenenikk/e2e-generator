@@ -87,7 +87,7 @@ def train_step(encoder, decoder, optimizer, inp, targ, enc_hidden, ref_word2idx,
 
 def save_training_metrics(losses, val_bleus, metrics_file):
     print('Saving metrics from', len(losses), 'batches to', metrics_file)
-    df = pd.DataFrame(val_bleus, losses, columns=['bleu', 'batch_loss'])
+    df = pd.DataFrame(list(zip(val_bleus, losses)), columns=['bleu', 'batch_loss'])
     df.write(metrics_file)
 
 def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples):
