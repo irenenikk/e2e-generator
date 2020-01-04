@@ -220,10 +220,10 @@ def print_generations(test_data, encoder, decoder, training_info):
         generated = generate_reference_with_sampling(encoder, decoder, test_data['mr'].iloc[i], training_info)
         #print('with beam 1', generated)
         #generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info, 3)
-        print(generated[0])
+        print(generated)
         if 'ref' in test_data.columns:
             print(test_data['ref'].iloc[i])
-            bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated[0])
+            bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
             print(bleu)
         print('------------')
 
@@ -264,6 +264,6 @@ if __name__ == "__main__":
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
-    #print_generations(test_data, encoder, decoder, training_info)
+    print_generations(test_data, encoder, decoder, training_info)
     bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info)
     print(bleu_mean, bleu_var)
