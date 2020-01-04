@@ -27,7 +27,7 @@ def load_text_data(data_file, num_examples=None):
     """ Load text data and return as a dataframe. """
     raw_data = pd.read_csv(data_file)
     if num_examples is not None: 
-        raw_data = raw_data.head(num_examples)
+        raw_data = raw_data.sample(n=num_examples)
     # and start and end tags to data
     data_columns = build_slot_columns(raw_data)
     data = pd.concat([raw_data, data_columns], axis=1)

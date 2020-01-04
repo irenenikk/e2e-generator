@@ -17,15 +17,14 @@ EPOCHS = 5
 BATCH_SIZE = 32
 embedding_dim = 128
 units = 512
-TRAINING_INFO_FILE = 'training_info.pkl'
 
 parser = argparse.ArgumentParser(description='Train the model for E2E restaurant description generation')
 parser.add_argument("training_data", type=str,
                     help="The path to the training data file")
 parser.add_argument("val_data", type=str,
                     help="The path to the validation data file")
-parser.add_argument("-ckpt", "--checkpoint-dir", default='./training_checkpoints',
-                    help="Specify path to training checkpoint to recover training")
+parser.add_argument("-id", "--identifier", default='',
+                    help="The identifier used to define checkpoint and training info directories")
 parser.add_argument("-r", "--restore-checkpoint", default=True,
                     help="Whether to start training from a previous checkpoint")
 parser.add_argument("-num", "--num-examples", type=int,
@@ -33,7 +32,8 @@ parser.add_argument("-num", "--num-examples", type=int,
 parser.add_argument("-f", "--metrics-file", default='val_metrics',
                     help="File to save validation bleus and batch losses to")
 
-def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
+def save_training_info(training_info_file, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max_length_targ, max_length_inp, embedding_dim, units):
+    print('Saving training information to', training_info_file)
     training_info = {}
     training_info['ref_word2idx'] = ref_word2idx
     training_info['ref_idx2word'] = ref_idx2word
@@ -43,7 +43,7 @@ def save_training_info(ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word, max
     training_info['max_length_inp'] = max_length_inp
     training_info['embedding_dim'] = embedding_dim
     training_info['units'] = units
-    with open(TRAINING_INFO_FILE, 'wb') as f:
+    with open(training_info_file, 'wb') as f:
         pickle.dump(training_info, f)
 
 def loss_function(real, pred):
@@ -90,7 +90,7 @@ def save_training_metrics(losses, val_bleus, metrics_file):
     df = pd.DataFrame(val_bleus, losses, columns=['bleu', 'batch_loss'])
     df.write(metrics_file)
 
-def train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_training_examples):
+def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples):
     print('Loading data')
     input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_training_examples)
     print('Found input data of shape', input_tensor.shape)
@@ -105,7 +105,8 @@ def train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_trai
     print('Saving training information')
     max_length_targ, max_length_inp = max_length(target_tensor), max_length(input_tensor)
     # save training info to use in analysis
-    save_training_info(ref_word2idx, 
+    save_training_info(training_info_file,
+                        ref_word2idx, 
                         ref_idx2word, 
                         mr_word2idx, 
                         mr_idx2word, 
@@ -113,7 +114,7 @@ def train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_trai
                         max_length_inp,
                         embedding_dim,
                         units)
-    training_info = load_training_info(TRAINING_INFO_FILE)
+    training_info = load_training_info(training_info_file)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units)
     decoder = Decoder(len(ref_word2idx)+1, embedding_dim, units*2, training=True)
     optimizer = tf.keras.optimizers.Adam()
@@ -122,9 +123,12 @@ def train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_trai
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,
                                     decoder=decoder)
-    if restore_checkpoint and tf.train.latest_checkpoint(checkpoint_dir):
-      print('Restoring checkpoint')
-      checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+    if restore_checkpoint:
+      print('Restoring checkpoint from', checkpoint_dir)
+      if tf.train.latest_checkpoint(checkpoint_dir):
+        checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+      else:
+        print('Could not restore checkpoint, folder', checkpoint_dir, 'not found')
     print('Starting training')
     s = time.time()
     end_id = ref_word2idx['<end>']
@@ -161,9 +165,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     data_file = args.training_data
     dev_data_file = args.val_data
-    checkpoint_dir = args.checkpoint_dir
+    identifier = args.identifier
     restore_checkpoint = args.restore_checkpoint
     num_examples = args.num_examples
     metrics_file = args.metrics_file
-    losses, val_bleus = train(data_file, dev_data_file, checkpoint_dir, restore_checkpoint, num_examples)
+    checkpoint_dir = 'training_checkpoints' + identifier
+    training_info_file = 'training_info' + identifier + '.pkl'
+    losses, val_bleus = train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_examples)
     save_training_metrics(losses, val_bleus, metrics_file)
