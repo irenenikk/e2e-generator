@@ -151,8 +151,8 @@ def create_results(predicted_ids, results, training_info):
     for i in range(len(predicted_ids)):
         idd = predicted_ids[i]
         utt = results[i]
-        if not results[i].endswith(END_SYMBOL) and idd != 0:
-            results[i] += training_info['ref_idx2word'][idd] +  " "
+        if not utt.endswith(END_SYMBOL) and idd != 0:
+            results[i] = (utt +  " " + training_info['ref_idx2word'][idd]).strip()
     return results
 
 def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
