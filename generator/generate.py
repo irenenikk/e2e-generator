@@ -13,12 +13,20 @@ import pickle
 import nltk
 from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
+import argparse
 
 BATCH_SIZE = 1
 # optimal beam size found by Juraska
 BEAM_SIZE = 10
 END_SYMBOL = '<end>'
 START_SYMBOL = '<start>'
+
+parser = argparse.ArgumentParser(description='Generate utterances from a trained E2E description generator')
+parser.add_argument("test_data", type=str,
+                    help="The path to the test data file")
+parser.add_argument("-id", "--identifier", default='',
+                    help="The identifier used to define checkpoint and training info directories")
+
 
 class BeamObj:
     def __init__(self, utterance, probability, last_id):
@@ -84,6 +92,8 @@ def score_prediction(prediction, mr_slots):
     The score function is taken from Juraska et al.
     """
     N = len(mr_slots.keys())
+    #print('-------------')
+    #print(mr_slots)
     # use Juraska's code to get erronous slots
     unaligned_slots, hallucinated_slots = get_unaligned_and_hallucinated_slots(prediction, mr_slots)
     #print('Prediction', prediction)
@@ -206,6 +216,9 @@ def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
         score = score_prediction(processed_utterance, mr_slots)
         scores[i] = score
         utterances.append(processed_utterance)
+    #for s, r in zip(scores, utterances):
+    #    print(r, '(', s, ')')
+    #print('----')
     # postprocess and score the beam
     best_pred_id = np.argsort(-scores)[0]
     return utterances[best_pred_id]
@@ -240,15 +253,7 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, sampli
         bleus[i] = bleu
     return np.mean(bleus), np.var(bleus)
 
-
-if __name__ == "__main__":
-    # restoring the latest checkpoint in checkpoint_dir
-    if len(sys.argv) < 2:
-        print('Please give path to data file as argument')
-        exit()
-    test_data_file = sys.argv[1]
-    checkpoint_dir = './training_checkpoints' if len(sys.argv) < 3 else sys.argv[2]
-    training_info_file = 'training_info.pkl' if len(sys.argv) < 4 else sys.argv[3]
+def main(test_data_file, checkpoint_dir, training_info_file):
     training_info = load_training_info(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
@@ -267,3 +272,12 @@ if __name__ == "__main__":
     print_generations(test_data, encoder, decoder, training_info)
     bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info)
     print(bleu_mean, bleu_var)
+
+if __name__ == "__main__":
+    # restoring the latest checkpoint in checkpoint_dir
+    args = parser.parse_args()
+    test_data_file = args.test_data
+    identifier = args.identifier
+    checkpoint_dir = 'training_checkpoints' + identifier
+    training_info_file = 'training_info' + identifier + '.pkl'
+    main(test_data_file, checkpoint_dir, training_info_file)
