@@ -25,7 +25,7 @@ parser.add_argument("val_data", type=str,
                     help="The path to the validation data file")
 parser.add_argument("-id", "--identifier", default='',
                     help="The identifier used to define checkpoint and training info directories")
-parser.add_argument("-r", "--restore-checkpoint", default=True,
+parser.add_argument("-r", "--restore-checkpoint", default=False, action='store_true',
                     help="Whether to start training from a previous checkpoint")
 parser.add_argument("-num", "--num-examples", type=int,
                     help="Test using only a subsample of training data (for development purposes)")
