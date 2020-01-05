@@ -5,6 +5,7 @@ import io
 import string
 import re
 import sys
+sys.path.append('./')
 import itertools
 from collections import OrderedDict
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -16,8 +17,6 @@ from slot_aligner.alignment.list_slot import align_list_slot, align_list_with_co
 from slot_aligner.alignment.numeric_slot import align_numeric_slot_with_unit, align_year_slot
 from slot_aligner.alignment.scalar_slot import align_scalar_slot
 from slot_aligner.alignment.categorical_slots import align_categorical_slot, foodSlot
-
-sys.append('./')
 
 customerrating_mapping = {
     'slot': 'rating',
@@ -454,6 +453,8 @@ def find_all_slots(utt, mr):
 def count_errors(utt, mr):
     """Counts unrealized and hallucinated slots in an utterance."""
 
+    delex_placeholders = extract_delex_placeholders(utt)
+
     slots_found, slots_hallucinated = find_all_slots(utt, mr)
     # Identify slots that were realized incorrectly or not mentioned at all in the utterance
     incorrect_slots = [slot for slot in mr if slot not in slots_found]
@@ -489,7 +490,7 @@ def find_alignment(utt, mr):
 def extract_delex_placeholders(utt):
     """Extracts delexicalized placeholders from the utterance."""
 
-    pattern = config.DELEX_PREFIX + '.*?' + config.DELEX_SUFFIX
+    pattern = '(name|near)_place'
 
     return set(re.findall(pattern, utt))
 

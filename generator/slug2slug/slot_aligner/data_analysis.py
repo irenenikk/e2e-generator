@@ -47,7 +47,7 @@ def align_slots(dataset, filename):
     new_df.to_csv(os.path.join(config.DATA_DIR, dataset, filename_out), index=False, encoding='utf8')
 
 
-def score_slot_realizations(path, filename):
+def score_slot_realizations(path, filename, error_suffix=' [errors]'):
     """Analyzes unrealized and hallucinated slot mentions in the utterances."""
 
     errors = []
@@ -105,9 +105,9 @@ def score_slot_realizations(path, filename):
     new_df['errors'] = errors
     new_df['incorrect slots'] = incorrect_slots
 
-    filename_out = os.path.splitext(filename)[0] + ' [errors].csv'
+    filename_out = os.path.splitext(filename)[0] + error_suffix + '.csv'
     new_df.to_csv(os.path.join(path, filename_out), index=False, encoding='utf8')
-
+    return filename_out
 
 def score_emphasis(dataset, filename):
     """Determines how many of the indicated emphasis instances are realized in the utterance."""

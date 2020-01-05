@@ -21,11 +21,6 @@ PREDICTIONS_BATCH_LEX_DIR = os.path.join(PREDICTIONS_DIR, 'batch_lex')
 PREDICTIONS_BATCH_EVENT_DIR = os.path.join(PREDICTIONS_DIR, 'batch_event')
 SLOT_ALIGNER_DIR = os.path.join(ROOT_DIR, 'slot_aligner')
 SLOT_ALIGNER_ALTERNATIVES = os.path.join(SLOT_ALIGNER_DIR, 'alignment', 'alternatives.json')
-T2T_DIR = os.path.join(ROOT_DIR, 't2t')
-TOOLS_DIR = os.path.join(ROOT_DIR, 'tools')
-TTEST_DIR = os.path.join(ROOT_DIR, 'ttest')
-TTEST_DATA_DIR = os.path.join(ROOT_DIR, 'ttest', 'data')
-TTEST_SCORES_DIR = os.path.join(ROOT_DIR, 'ttest', 'scores')
 
 # Dataset paths
 E2E_DATA_DIR = os.path.join(DATA_DIR, 'rest_e2e')
@@ -49,8 +44,14 @@ def find_all_slots(utt, mr):
     slots_hallucinated = set()
 
     utt, utt_tok = __preprocess_utterance(utt)
+    # find halluxinated slots manifesting as delexicalisations
     delex_placeholders = extract_delex_placeholders(utt)
-
+    for placeholder in delex_placeholders:
+        if 'name' in placeholder:
+            slots_hallucinated.add('name')
+        if 'near' in placeholder:
+            slots_hallucinated.add('near')
+    
     for slot, value in mr.items():
         slot_root = slot.rstrip(string.digits)
         value = value.lower()
