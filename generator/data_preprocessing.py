@@ -88,6 +88,9 @@ def reconstruct_mr(data, mrs):
     for mr in mrs:
         for i in range(len(data)):
             if data.iloc[i][mr] is not None:
-                new_mr[i] +=  mr + '[' + data.iloc[i][mr]+ '], '
+                if new_mr[i] == '':
+                    new_mr[i] = '[' + data.iloc[i][mr]+ ']'
+                else:
+                    new_mr[i] +=  mr + ', [' + data.iloc[i][mr]+ ']'
     data['new_mr'] = new_mr
     return data
