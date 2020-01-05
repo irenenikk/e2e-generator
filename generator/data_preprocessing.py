@@ -54,6 +54,7 @@ def add_space_to_punctuation(text):
 
 def preprocess_data(data):
     """ Add start and end tags to reference text and delexicalize. """
+    data = data.dropna()
     data['ref'] = data['ref'].apply(add_space_to_punctuation)
     data['ref'] = data['ref'].apply(lambda x: '<start> ' + x + ' <end>')
     data = delexicalize(data)
