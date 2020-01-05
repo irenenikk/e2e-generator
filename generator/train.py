@@ -13,7 +13,6 @@ import nltk
 from generate import calculate_mean_bleu_score, load_training_info
 import argparse
 
-EPOCHS = 5
 BATCH_SIZE = 32
 embedding_dim = 128
 units = 512
@@ -29,6 +28,8 @@ parser.add_argument("-r", "--restore-checkpoint", default=False, action='store_t
                     help="Whether to start training from a previous checkpoint")
 parser.add_argument("-num", "--num-examples", type=int,
                     help="Test using only a subsample of training data (for development purposes)")
+parser.add_argument("-e", "--epochs", type=int, default=5,
+                    help="Amount of epochs to train for")
 parser.add_argument("-f", "--metrics-file", default='val_metrics',
                     help="File to save validation bleus and batch losses to")
 parser.add_argument("-tf", "--teacher-forcing", default=True, action='store_false',
@@ -92,7 +93,7 @@ def save_training_metrics(losses, val_bleus, metrics_file):
     df = pd.DataFrame(list(zip(val_bleus, losses)), columns=['bleu', 'batch_loss'])
     df.write(metrics_file)
 
-def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples, teacher_forcing):
+def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples, teacher_forcing, epochs):
     print('Loading data')
     input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word = load_data_tensors(data_file, num_training_examples)
     print('Found input data of shape', input_tensor.shape)
@@ -138,7 +139,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
     dev_data = load_text_data(dev_data_file, 200)
     val_bleus = []
     losses = []
-    for epoch in range(EPOCHS):
+    for epoch in range(epochs):
         start = time.time()
         enc_hidden = encoder.initialize_hidden_state(BATCH_SIZE)
         total_loss = 0
@@ -154,7 +155,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
                 val_bleus.append(val_bleu)
                 losses.append(batch_loss)
         if teacher_forcing and (epoch + 1) % 2 == 0:
-          teacher_force_prob *= 0.9
+            teacher_force_prob *= 0.9
         # save the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             print('Saving the model')
@@ -173,13 +174,17 @@ if __name__ == '__main__':
     num_examples = args.num_examples
     metrics_file = args.metrics_file
     teacher_forcing = args.teacher_forcing
+    epochs = args.epochs
+    print('Using teacher forcing', teacher_forcing)
     checkpoint_dir = 'training_checkpoints' + identifier
     training_info_file = 'training_info' + identifier + '.pkl'
+
     losses, val_bleus = train(data_file,
                               dev_data_file,
                               checkpoint_dir,
                               training_info_file,
                               restore_checkpoint,
                               num_examples,
-                              teacher_forcing)
+                              teacher_forcing,
+                              epochs)
     save_training_metrics(losses, val_bleus, metrics_file)
