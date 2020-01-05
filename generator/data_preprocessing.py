@@ -59,10 +59,10 @@ def preprocess_data(data):
     data = delexicalize(data)
     return data
 
-def build_slot_columns(data):
+def build_slot_columns(data, remove_whitespace=True):
     """ Build a dataframe with each slot as a column. """
     data.columns = map(str.lower, data.columns)
-    slot_infos = data['mr'].apply(get_slots).values
+    slot_infos = data['mr'].apply(lambda x: get_slots(x, remove_whitespace=remove_whitespace)).values
     # get all possible slots from data
     all_slots = set([key for d in slot_infos for key in d.keys()])
     # create a new pandas dataframe of interesting columns

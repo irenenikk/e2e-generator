@@ -24,7 +24,7 @@ def main(folder_name, filename, ignore_old):
     print('Using error file', filename_out)
     error_df = pd.read_csv(os.path.join(folder_name, filename_out))
     orig_data = pd.read_csv(os.path.join(folder_name, filename))
-    slot_column_data = build_slot_columns(error_df)
+    slot_column_data = build_slot_columns(error_df, remove_whitespace=False)
     comb_data = pd.concat([error_df, slot_column_data], axis=1)
     if len(comb_data) != len(error_df):
         raise ValueError('Analysed trainset and original trainset are not the same length')
