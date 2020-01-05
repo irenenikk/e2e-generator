@@ -37,16 +37,18 @@ def main(folder_name, filename, ignore_old):
         incorrect_slots = err_row['incorrect slots'].split(', ')
         # this has to be done because slug2slug gives the column name in lowercase
         incorrect_cols = comb_data.columns.map(lambda x: x.lower()).isin(incorrect_slots)
-        # remove the incorrect slot value
+        # remove the incorrect slot values
         comb_data.loc[i, incorrect_cols] = None
         cleaned += 1
     print('Cleaned slots from', cleaned, 'instances')
     # reconstruct the slot column data frame with the cleaned values
     cleaned_data = reconstruct_mr(comb_data, slot_column_data.columns)
+    cleaned_data = cleaned_data[~(cleaned_data['new_mr'] == '')]
     cleaned_data = cleaned_data[['new_mr', 'ref']]
     cleaned_data = cleaned_data.rename(columns={'new_mr': 'mr'})
+    # cleaned data may now have sentences where there are no valid mrs
+    # remove those before saving
     cleaned_out = os.path.join(folder_name, filename_prefix + cleaned_file_suffix + '.csv')
-    cleaned_data = cleaned_data.dropna()
     print('Final cleaned data length', len(cleaned_data))
     print('Writing cleaned dataset to', cleaned_out)
     cleaned_data.to_csv(cleaned_out, index=False)
