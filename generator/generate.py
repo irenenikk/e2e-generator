@@ -168,7 +168,7 @@ def create_results(predicted_ids, results, training_info):
 def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
     processed_mr_info = preprocess_mr(mr_info)
-    inputs = [training_info['mr_word2idx'][i.strip()] for i in processed_mr_info.split(' ')]
+    inputs = [training_info['mr_word2idx'][i.strip()] if i.strip() in training_info['mr_word2idx'] else 0 for i in processed_mr_info.split(' ')]
     inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs],
                                                            maxlen=training_info['max_length_inp'],
                                                            padding='post')
