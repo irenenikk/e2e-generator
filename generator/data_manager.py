@@ -12,6 +12,7 @@ def load_data_tensors(data_file, num_examples=None):
     if num_examples is not None: 
         raw_data = raw_data.head(num_examples)
     # extract the slot infromation into separate columns
+    raw_data = raw_data.dropna()
     data_columns = build_slot_columns(raw_data)
     # add the slot columns into the dataframe
     data = pd.concat([raw_data, data_columns], axis=1)
