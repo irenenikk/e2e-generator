@@ -23,7 +23,9 @@ def main(folder_name, filename, ignore_old):
         filename_out = score_slot_realizations(folder_name, filename, error_file_suffix)
     print('Using error file', filename_out)
     error_df = pd.read_csv(os.path.join(folder_name, filename_out))
+    print('Error df length', len(error_df))
     orig_data = pd.read_csv(os.path.join(folder_name, filename))
+    print('Original data length', len(orig_data))
     slot_column_data = build_slot_columns(error_df, remove_whitespace=False)
     comb_data = pd.concat([error_df, slot_column_data], axis=1)
     if len(comb_data) != len(error_df):
@@ -44,6 +46,8 @@ def main(folder_name, filename, ignore_old):
     cleaned_data = cleaned_data[['new_mr', 'ref']]
     cleaned_data = cleaned_data.rename(columns={'new_mr': 'mr'})
     cleaned_out = os.path.join(folder_name, filename_prefix + cleaned_file_suffix + '.csv')
+    cleaned_data = cleaned_data.dropna()
+    print('Final cleaned data length', len(cleaned_data))
     print('Writing cleaned dataset to', cleaned_out)
     cleaned_data.to_csv(cleaned_out, index=False)
 
