@@ -41,9 +41,11 @@ def main(folder_name, filename, ignore_old):
     print('Cleaned slots from', cleaned, 'instances')
     # reconstruct the slot column data frame with the cleaned values
     cleaned_data = reconstruct_mr(comb_data, slot_column_data.columns)
+    cleaned_data = cleaned_data[['new_mr', 'ref']]
+    cleaned_data = cleaned_data.rename(columns={'new_mr': 'mr'})
     cleaned_out = os.path.join(folder_name, filename_prefix + cleaned_file_suffix + '.csv')
     print('Writing cleaned dataset to', cleaned_out)
-    cleaned_data.to_csv(cleaned_out)
+    cleaned_data.to_csv(cleaned_out, index=False)
 
 if __name__ == '__main__':
     args = parser.parse_args()
