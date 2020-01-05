@@ -154,7 +154,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
                 print('Validation bleu score', val_bleu)
                 val_bleus.append(val_bleu)
                 losses.append(batch_loss)
-        if teacher_forcing and (epoch + 1) % 2 == 0:
+        if not teacher_forcing and (epoch + 1) % 2 == 0:
             teacher_force_prob *= 0.9
         # save the model every 2 epochs
         if (epoch + 1) % 2 == 0:
