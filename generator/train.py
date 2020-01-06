@@ -7,11 +7,11 @@ import tensorflow_probability as tfp
 from models import Encoder, BahdanauAttention, Decoder
 import time
 import os
-import pickle
 import json
 import nltk
 from generate import calculate_mean_bleu_score, load_training_info
 import argparse
+import helpers
 
 BATCH_SIZE = 32
 embedding_dim = 128
@@ -46,8 +46,7 @@ def save_training_info(training_info_file, ref_word2idx, ref_idx2word, mr_word2i
     training_info['max_length_inp'] = max_length_inp
     training_info['embedding_dim'] = embedding_dim
     training_info['units'] = units
-    with open(training_info_file, 'wb') as f:
-        pickle.dump(training_info, f)
+    helpers.save_to_pickle(training_info, training_info_file)
 
 def loss_function(real, pred):
   loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
@@ -91,7 +90,7 @@ def train_step(encoder, decoder, optimizer, inp, targ, enc_hidden, ref_word2idx,
 def save_training_metrics(losses, val_bleus, metrics_file):
     print('Saving metrics from', len(losses), 'batches to', metrics_file)
     df = pd.DataFrame(list(zip(val_bleus, losses)), columns=['bleu', 'batch_loss'])
-    df.write(metrics_file)
+    df.to_csv(metrics_file)
 
 def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_checkpoint, num_training_examples, teacher_forcing, epochs):
     print('Loading data')

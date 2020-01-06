@@ -9,7 +9,6 @@ from data_manager import load_data_tensors, load_text_data
 from models import Encoder, BahdanauAttention, Decoder
 import time
 import os
-import pickle
 import nltk
 from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
@@ -223,10 +222,6 @@ def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
     best_pred_id = np.argsort(-scores)[0]
     return utterances[best_pred_id]
 
-def load_training_info(training_info_file):
-    with open(training_info_file, 'rb') as f:
-        return pickle.load(f)
-
 def print_generations(test_data, encoder, decoder, training_info):
     for i in range(len(test_data)):
         print(test_data['mr'].iloc[i])
@@ -254,7 +249,7 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, sampli
     return np.mean(bleus), np.var(bleus)
 
 def main(test_data_file, checkpoint_dir, training_info_file):
-    training_info = load_training_info(training_info_file)
+    training_info = load_from_pickle(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
                         training_info['units'])
@@ -266,6 +261,7 @@ def main(test_data_file, checkpoint_dir, training_info_file):
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                     encoder=encoder,
                                     decoder=decoder)
+    print('Restoring checkpoint from', checkpoint_dir)
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
