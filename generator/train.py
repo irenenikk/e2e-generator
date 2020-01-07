@@ -171,7 +171,7 @@ if __name__ == '__main__':
     identifier = args.identifier
     restore_checkpoint = args.restore_checkpoint
     num_examples = args.num_examples
-    metrics_file = args.metrics_file
+    metrics_file = args.metrics_file + identifier
     teacher_forcing = args.teacher_forcing
     epochs = args.epochs
     print('Using teacher forcing', teacher_forcing)

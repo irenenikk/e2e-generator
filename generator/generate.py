@@ -13,6 +13,7 @@ import nltk
 from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
 import argparse
+import helpers
 
 BATCH_SIZE = 1
 # optimal beam size found by Juraska
@@ -249,7 +250,7 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, sampli
     return np.mean(bleus), np.var(bleus)
 
 def main(test_data_file, checkpoint_dir, training_info_file):
-    training_info = load_from_pickle(training_info_file)
+    training_info = helpers.load_from_pickle(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
                         training_info['units'])
