@@ -9,7 +9,7 @@ import time
 import os
 import json
 import nltk
-from generate import calculate_mean_bleu_score, load_training_info
+from generate import calculate_mean_bleu_score
 import argparse
 import helpers
 
@@ -116,7 +116,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
                         max_length_inp,
                         embedding_dim,
                         units)
-    training_info = load_training_info(training_info_file)
+    training_info = helpers.load_from_pickle(training_info_file)
     encoder = Encoder(len(mr_word2idx)+1, embedding_dim, units)
     decoder = Decoder(len(ref_word2idx)+1, embedding_dim, units*2, training=True)
     optimizer = tf.keras.optimizers.Adam()

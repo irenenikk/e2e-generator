@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import re
 import sys
+from collections import OrderedDict
 
 DELEXICALIZED_MRS = ['name', 'near']
 MR_SUFFIX = '_place'
@@ -85,7 +86,8 @@ def tokenize(texts):
 
 def reconstruct_mr(data, mrs):
     new_mr = [''] * len(data)
-    for mr in mrs:
+    # ensure the data is always in the same order
+    for mr in sorted(mrs):
         for i in range(len(data)):
             if data.iloc[i][mr] is not None:
                 info = mr + '[' + data.iloc[i][mr]+ ']'

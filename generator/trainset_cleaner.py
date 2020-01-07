@@ -27,7 +27,9 @@ def main(folder_name, filename, ignore_old):
     orig_data = pd.read_csv(os.path.join(folder_name, filename))
     print('Original data length', len(orig_data))
     slot_column_data = build_slot_columns(error_df, remove_whitespace=False)
+    print(slot_column_data.columns)
     comb_data = pd.concat([error_df, slot_column_data], axis=1)
+    column_order = comb_data.columns
     if len(comb_data) != len(error_df):
         raise ValueError('Analysed trainset and original trainset are not the same length')
     # find data points which were marked to have an error
@@ -40,6 +42,7 @@ def main(folder_name, filename, ignore_old):
         # remove the incorrect slot values
         comb_data.loc[i, incorrect_cols] = None
         cleaned += 1
+    comb_data = comb_data[column_order]
     print('Cleaned slots from', cleaned, 'instances')
     # reconstruct the slot column data frame with the cleaned values
     cleaned_data = reconstruct_mr(comb_data, slot_column_data.columns)

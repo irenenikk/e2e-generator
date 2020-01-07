@@ -14,10 +14,10 @@ from slug2slug_aligner import get_unaligned_and_hallucinated_slots
 sys.path.append('./')
 import argparse
 import helpers
+import bayesian_sampler
 
 BATCH_SIZE = 1
 # optimal beam size found by Juraska
-BEAM_SIZE = 10
 END_SYMBOL = '<end>'
 START_SYMBOL = '<start>'
 
@@ -26,15 +26,22 @@ parser.add_argument("test_data", type=str,
                     help="The path to the test data file")
 parser.add_argument("-id", "--identifier", default='',
                     help="The identifier used to define checkpoint and training info directories")
+parser.add_argument("-b", "--beam-width", type=int, default=0,
+                    help="Size of beam to use in generation. If not specified use sampling.")
+parser.add_argument("-s", "--sample-content", default=False, action="store_true",
+                    help="Sample slots used in MR of utterance.")
+parser.add_argument("-cdp", "--cpd-model-file", default='cpd_model.pkl',
+                    help="Pickle file where the cpd model is stored")
 
 
 class BeamObj:
-    def __init__(self, utterance, probability, last_id):
+    def __init__(self, utterance, probability, last_id, last_hidden):
         self.utterance = utterance
         self.probability = probability
         # save the id of the last word
         # this will be used as input for the next timestep
         self.last_id = last_id
+        self.last_hidden = last_hidden
 
     def __repr__(self):
         return '{}({})'.format(self.utterance, self.probability)
@@ -49,27 +56,11 @@ def search_candidates2(curr_prob, curr_utterance, predictions, ref_idx2word):
     for word_id in range(1, predictions.shape[1]):
         pred = predictions[0][word_id]
         new_prob = curr_prob + np.log(pred)
-        new_utterance = curr_utterance + " " + ref_idx2word[word_id]
+        new_utterance = (curr_utterance + " " + ref_idx2word[word_id]).strip()
         candidates += [BeamObj(new_utterance, new_prob, word_id)]
     return candidates
 
-def search_candidates(curr_prob, curr_utterance, predictions, ref_idx2word, beam_size):
-    """ Find the possible extensions to an utterance and their log-probabilities. """ 
-    candidates = []
-    # calculate probabilites if new predictions were added
-    # check for all new predictions in the beam 
-    if predictions.shape[0] != 1:
-        raise ValueError('Batches not supported in beam search. ')
-    preds = predictions[0]
-    ids_by_prob = np.argsort(-preds)[:5]
-    for word_id in ids_by_prob:
-        pred = preds[word_id]
-        new_prob = curr_prob + pred
-        new_utterance = curr_utterance + " " + ref_idx2word[word_id]
-        candidates += [BeamObj(new_utterance, new_prob, word_id)]
-    return candidates
-
-def search_candidates3(curr_prob, curr_utterance, predictions, ref_idx2word, beam_size):
+def search_candidates(curr_prob, curr_utterance, dec_hidden, predictions, ref_idx2word, beam_size):
     """ Find the possible extensions to an utterance and their log-probabilities. """ 
     candidates = []
     # calculate probabilites if new predictions were added
@@ -80,25 +71,20 @@ def search_candidates3(curr_prob, curr_utterance, predictions, ref_idx2word, bea
     ids_by_prob = np.argsort(-preds)[:beam_size]
     for word_id in ids_by_prob:
         pred = preds[word_id]
-        new_prob = curr_prob + pred
-        new_utterance = curr_utterance + " " + ref_idx2word[word_id]
-        candidates += [BeamObj(new_utterance, new_prob, word_id)]
+        new_prob = curr_prob + np.log(pred)
+        new_utterance = (curr_utterance + " " + ref_idx2word[word_id]).strip()
+        candidates += [BeamObj(new_utterance, new_prob, word_id, dec_hidden)]
     return candidates
 
 def score_prediction(prediction, mr_slots):
     """ 
-    Scores a complete utterance based on slot realisation.
-    mr_slots should be a dict where keys are slots and values are slot values.
-    The score function is taken from Juraska et al.
+        Scores a complete utterance based on slot realisation.
+        mr_slots should be a dict where keys are slots and values are slot values.
+        The score function is taken from Juraska et al.
     """
     N = len(mr_slots.keys())
-    #print('-------------')
-    #print(mr_slots)
     # use Juraska's code to get erronous slots
     unaligned_slots, hallucinated_slots = get_unaligned_and_hallucinated_slots(prediction, mr_slots)
-    #print('Prediction', prediction)
-    #print('Unaligned slots:', unaligned_slots)
-    #print('Hallucinated slots:', hallucinated_slots)
     return N/((len(unaligned_slots)+1)*(len(hallucinated_slots)+1))
 
 def generation_done(beam_obj, training_info, end_token):
@@ -120,38 +106,27 @@ def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
     inputs = tf.convert_to_tensor(inputs)
     start_token = training_info['ref_word2idx'][START_SYMBOL]
     end_token = training_info['ref_word2idx'][END_SYMBOL]
-    beam = [BeamObj('', 0, start_token)]
     hidden = encoder.initialize_hidden_state(1)
     enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
+    beam = [BeamObj('', 0, start_token, dec_hidden)]
     while(True):
         new_beams = []
         for beam_obj in beam:
-            #print('---------')
-            #print('beam obj', beam_obj)
             if generation_done(beam_obj, training_info, end_token):
                 new_beams += [beam_obj]
             else:
-                predictions, dec_hidden, attention_weights = decoder(tf.expand_dims([beam_obj.last_id], 0), dec_hidden, enc_out)
+                predictions, dec_hidden, attention_weights = decoder(tf.expand_dims([beam_obj.last_id], 0), beam_obj.last_hidden, enc_out)
                 curr_prob = beam_obj.probability
                 curr_utterance = beam_obj.utterance
                 # the network gives back logits instead of probabilities
                 # so start by calculating probabilities
-                preds = tf.nn.log_softmax(predictions, axis=1).numpy()
+                preds = tf.nn.softmax(predictions, axis=1).numpy()
                 # find the candidates for this prediction
-                candidates = search_candidates(curr_prob, curr_utterance, preds, training_info['ref_idx2word'], beam_size)
-                #print('candidates', candidates)
+                candidates = search_candidates(curr_prob, curr_utterance, dec_hidden, preds, training_info['ref_idx2word'], beam_size)
                 new_beams += candidates
-            #print('new beams', new_beams)
-        # normalize the probability in order not to favor short sequences.
-        #print('VANILLA')
-        #print([BeamObj(b.utterance, b.probability, b.last_id) for b in new_beams])
-        normalised_beams = [BeamObj(b.utterance, b.probability/get_length_normalisation_denominator(b.utterance), b.last_id) for b in new_beams]
-        #print('NORMALISED')
-        #print(normalised_beams)
+        normalised_beams = [BeamObj(b.utterance, b.probability/get_length_normalisation_denominator(b.utterance), b.last_id, b.last_hidden) for b in new_beams]
         beam = sorted(normalised_beams, key=lambda b: -b.probability)[:beam_size]
-        #print('beam', beam)
-        #same = len(set([len(b.utterance.split(" "))for b in new_beams])) == 1
         all_generated = [generation_done(beam_obj, training_info, end_token) for beam_obj in beam]
         if np.all(all_generated):
             break
@@ -190,7 +165,7 @@ def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
         dec_input = tf.expand_dims(predicted_ids, 1)
     return results, mr_info, attention_plot
 
-def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_size=10):
+def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_size=1):
     """ Generate new reference, and postprocess it to form a complete sentence."""
     beam, processed_mr_info, attention_plot = evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size)
     mr_slots = get_slots(mr_info, remove_whitespace=False)
@@ -202,8 +177,7 @@ def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam
         beam_obj.probability += np.log(score)
     # order again by probability
     sorted_beam = sorted(beam, key=lambda x: -x.probability)
-    #best_prediction = beam[0].processed_utterance
-    return beam[0].utterance, beam[0].probability
+    return beam[0].utterance
 
 def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
     """ Generate new reference, and postprocess it to form a complete sentence."""
@@ -216,40 +190,62 @@ def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
         score = score_prediction(processed_utterance, mr_slots)
         scores[i] = score
         utterances.append(processed_utterance)
-    #for s, r in zip(scores, utterances):
-    #    print(r, '(', s, ')')
-    #print('----')
     # postprocess and score the beam
     best_pred_id = np.argsort(-scores)[0]
     return utterances[best_pred_id]
 
-def print_generations(test_data, encoder, decoder, training_info):
+def sample_mr_content(mr_info, content_selection_model_file):
+    sampled_slots = bayesian_sampler.sample_slots(content_selection_model_file)
+    # always include name
+    sampled_slots += ['name']
+    mr_slots = get_slots(mr_info, remove_whitespace=False)
+    mr_slots_to_use = { mr_key: mr_slots[mr_key] for mr_key in mr_slots.keys() if mr_key in sampled_slots }
+    return ', '.join(k + '[' + v + ']' for k, v in mr_slots_to_use.items())
+
+def print_generations(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file):
+    print('Beam width is', beam_width)
     for i in range(len(test_data)):
         print(test_data['mr'].iloc[i])
-        generated = generate_reference_with_sampling(encoder, decoder, test_data['mr'].iloc[i], training_info)
-        #print('with beam 1', generated)
-        #generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info, 3)
+        mr_input = test_data['mr'].iloc[i]
+        mr_info = ''
+        if sample_content:
+            mr_info = sample_mr_content(mr_input, cpd_model_file)
+            print('Sampled mr', mr_info)
+        else:
+            mr_info = mr_input
+        generated = ''
+        if beam_width > 0:
+            generated = generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_width)
+        else:
+            generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
+        print('-Best prediction-')
         print(generated)
         if 'ref' in test_data.columns:
             print(test_data['ref'].iloc[i])
             bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
-            print(bleu)
-        print('------------')
+            print('bleu score for the best prediction', bleu)
+        print('-------------------------')
 
-def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, sampling=True):
+def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file):
     print('Calculating mean BLEU score for validation set of size', len(test_data))
     bleus = np.zeros(len(test_data))
     for i in range(len(test_data)):
-        generated = None
-        if sampling:
-            generated = generate_reference_with_sampling(encoder, decoder, test_data['mr'].iloc[i], training_info)
+        mr_input = test_data['mr'].iloc[i]
+        mr_info = ''
+        if sample_content:
+            mr_info = sample_mr_content(mr_input, cpd_model_file)
         else:
-            generated = generate_reference(encoder, decoder, test_data['mr'].iloc[i], training_info)
+            mr_info = mr_input
+        generated = ''
+        if beam_width > 0:
+            generated = generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_width)
+        else:
+            generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
         bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
         bleus[i] = bleu
     return np.mean(bleus), np.var(bleus)
 
-def main(test_data_file, checkpoint_dir, training_info_file):
+def main(test_data_file, checkpoint_dir, training_info_file, beam_search, sample_content, cpd_model_file):
     training_info = helpers.load_from_pickle(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
@@ -266,8 +262,8 @@ def main(test_data_file, checkpoint_dir, training_info_file):
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
-    print_generations(test_data, encoder, decoder, training_info)
-    bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info)
+    print_generations(test_data, encoder, decoder, training_info, beam_search, sample_content, cpd_model_file)
+    bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
     print(bleu_mean, bleu_var)
 
 if __name__ == "__main__":
@@ -277,4 +273,7 @@ if __name__ == "__main__":
     identifier = args.identifier
     checkpoint_dir = 'training_checkpoints' + identifier
     training_info_file = 'training_info' + identifier + '.pkl'
-    main(test_data_file, checkpoint_dir, training_info_file)
+    beam_width = args.beam_width
+    sample_content = args.sample_content
+    cpd_model_file = args.cpd_model_file
+    main(test_data_file, checkpoint_dir, training_info_file, beam_width, sample_content, cpd_model_file)

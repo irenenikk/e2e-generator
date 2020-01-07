@@ -11,7 +11,7 @@ from util import save_to_pickle
 parser = argparse.ArgumentParser(description='Analyse the probabilities of slots appearing from training data')
 parser.add_argument("training_data", type=str,
                     help="The path to the training data file")
-parser.add_argument("target_file", type=str,
+parser.add_argument("target_file", type=str, default='cpd_model.pkl',
                     help="Where to store the conditional probability tables created")
 
 def check_pairwise_independences(correlation_cols, est):
@@ -54,6 +54,8 @@ def main(data_file, target_file):
         cpd = mle.estimate_cpd(slot)
         cpd_tables.append(cpd)
     model.add_cpds(*cpd_tables)
+    if not target_file.endswith('.pkl'):
+        target_file += '.pkl'
     print('Storing the Bayesian network to', target_file)
     save_to_pickle(model, target_file)
 
