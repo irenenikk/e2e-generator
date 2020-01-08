@@ -16,10 +16,10 @@ def load_data_tensors(data_file, num_examples=None):
     # add the slot columns into the dataframe
     data = pd.concat([raw_data, data_columns], axis=1)
     data = preprocess_data(data)
-    data = reconstruct_mr(data, data_columns.columns)
+    new_mr = reconstruct_mr(data, data_columns.columns)
+    data['new_mr'] = new_mr
     data['new_mr'] = data['new_mr'].apply(add_space_to_punctuation)
     input_tensor, mr_word2idx, mr_idx2word = tokenize(data['new_mr'])
-#    print(mr_word2idx)
     target_tensor, ref_word2idx, ref_idx2word = tokenize(data['ref'])
     return input_tensor, target_tensor, ref_word2idx, ref_idx2word, mr_word2idx, mr_idx2word
 
@@ -29,6 +29,8 @@ def load_text_data(data_file, num_examples=None):
     # and start and end tags to data
     data_columns = build_slot_columns(raw_data)
     data = pd.concat([raw_data, data_columns], axis=1)
+    new_mr = reconstruct_mr(data, data_columns.columns)
+    data['mr'] = new_mr
     if num_examples is not None:
         return data.sample(num_examples)
     return data

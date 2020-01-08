@@ -26,7 +26,7 @@ def delexicalize_mr(mr_info, slots):
 
 def get_slots(mr_info, remove_whitespace=True):
     """ Build a dict containing all the slots in an MR. """
-    slots = {}
+    slots = OrderedDict()
     MRs = mr_info.split(', ')
     for mr in MRs:
         slot = mr[:mr.find('[')]
@@ -65,7 +65,10 @@ def build_slot_columns(data, remove_whitespace=True):
     data.columns = map(str.lower, data.columns)
     slot_infos = data['mr'].apply(lambda x: get_slots(x, remove_whitespace=remove_whitespace)).values
     # get all possible slots from data
-    all_slots = set([key for d in slot_infos for key in d.keys()])
+    # ensure that the order stays the same by sorting
+    # a seq2seq model expects structure in input
+    # this same method is used to load training and test data
+    all_slots = sorted(list(set([key for d in slot_infos for key in d.keys()])))
     # create a new pandas dataframe of interesting columns
     mr_slots = {}
     for slot in all_slots:
@@ -87,7 +90,7 @@ def tokenize(texts):
 def reconstruct_mr(data, mrs):
     new_mr = [''] * len(data)
     # ensure the data is always in the same order
-    for mr in sorted(mrs):
+    for mr in mrs:
         for i in range(len(data)):
             if data.iloc[i][mr] is not None:
                 info = mr + '[' + data.iloc[i][mr]+ ']'
@@ -95,5 +98,4 @@ def reconstruct_mr(data, mrs):
                     new_mr[i] = info
                 else:
                     new_mr[i] +=  ', ' + info
-    data['new_mr'] = new_mr
-    return data
+    return new_mr

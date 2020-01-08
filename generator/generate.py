@@ -243,6 +243,9 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_w
             generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
         bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
         bleus[i] = bleu
+        if i % 500 == 0:
+            print(generated)
+            print('mean bleu', np.mean(bleus))
     return np.mean(bleus), np.var(bleus)
 
 def main(test_data_file, checkpoint_dir, training_info_file, beam_search, sample_content, cpd_model_file):
@@ -262,7 +265,7 @@ def main(test_data_file, checkpoint_dir, training_info_file, beam_search, sample
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
-    print_generations(test_data, encoder, decoder, training_info, beam_search, sample_content, cpd_model_file)
+    #print_generations(test_data, encoder, decoder, training_info, beam_search, sample_content, cpd_model_file)
     bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
     print(bleu_mean, bleu_var)
 
@@ -275,5 +278,6 @@ if __name__ == "__main__":
     training_info_file = 'training_info' + identifier + '.pkl'
     beam_width = args.beam_width
     sample_content = args.sample_content
+    print('Sampling content', sample_content)
     cpd_model_file = args.cpd_model_file
     main(test_data_file, checkpoint_dir, training_info_file, beam_width, sample_content, cpd_model_file)
