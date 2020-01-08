@@ -226,9 +226,11 @@ def print_generations(test_data, encoder, decoder, training_info, beam_width, sa
             print('bleu score for the best prediction', bleu)
         print('-------------------------')
 
-def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file):
+def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file=None):
     print('Calculating mean BLEU score for validation set of size', len(test_data))
     bleus = np.zeros(len(test_data))
+    if sample_content and cpd_model_file is None:
+        raise ValueError('Please give CPD model file if sampling content')
     for i in range(len(test_data)):
         mr_input = test_data['mr'].iloc[i]
         mr_info = ''
