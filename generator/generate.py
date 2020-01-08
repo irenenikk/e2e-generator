@@ -245,8 +245,11 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_w
             generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
         bleu = nltk.translate.bleu_score.sentence_bleu([test_data['ref'].iloc[i]], generated)
         bleus[i] = bleu
+        if i % 50 == 0:
+            print(i)
         if i % 500 == 0:
             print(generated)
+            print(test_data['ref'].iloc[i])
             print('mean bleu', np.mean(bleus))
     return np.mean(bleus), np.var(bleus)
 
