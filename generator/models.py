@@ -63,22 +63,13 @@ class Decoder(tf.keras.Model):
     self.training = training
 
   def call(self, x, hidden, enc_output):
-    #print('x', x.shape)
-    #print('hidden ', hidden)
     context_vector, attention_weights = self.attention(hidden, enc_output)
     x = self.embedding(x)
-    #print('x embedding', x.shape)
-    #print('expanded shape', expanded.shape)
     x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
     # initialize decoder with the encoder hidden state
     # and give encoded output as input
-    #output, *states = self.rnn(x, initial_state=[hidden]*self.num_layers)
     output, state = self.gru(x, initial_state=hidden)
-    #print('state.shape', state.shape)
-    #print('otuput.shape', output.shape)
     output = tf.reshape(output, (-1, output.shape[2]))
-    #print('otuput.shape', output.shape)
     x = self.dropout(x, training=self.training)
     x = self.fc(output)
-    # return the last state
     return x, state, attention_weights

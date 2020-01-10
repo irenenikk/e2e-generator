@@ -41,24 +41,11 @@ class BeamObj:
         # save the id of the last word
         # this will be used as input for the next timestep
         self.last_id = last_id
+        # this is the decoder hidden state obtained from the previous prediction
         self.last_hidden = last_hidden
 
     def __repr__(self):
         return '{}({})'.format(self.utterance, self.probability)
-
-def search_candidates2(curr_prob, curr_utterance, predictions, ref_idx2word):
-    """ Find the possible extensions to an utterance and their log-probabilities. """ 
-    candidates = []
-    # calculate probabilites if new predictions were added
-    # check for all new predictions in the beam 
-    if predictions.shape[0] != 1:
-        raise ValueError('Batches not supported in beam search. ')
-    for word_id in range(1, predictions.shape[1]):
-        pred = predictions[0][word_id]
-        new_prob = curr_prob + np.log(pred)
-        new_utterance = (curr_utterance + " " + ref_idx2word[word_id]).strip()
-        candidates += [BeamObj(new_utterance, new_prob, word_id)]
-    return candidates
 
 def search_candidates(curr_prob, curr_utterance, dec_hidden, predictions, ref_idx2word, beam_size):
     """ Find the possible extensions to an utterance and their log-probabilities. """ 
@@ -91,10 +78,9 @@ def generation_done(beam_obj, training_info, end_token):
     """ Stop when end token is reached or the sentence is the maximal length. """
     return beam_obj.last_id == end_token or len(beam_obj.utterance) == training_info['max_length_targ']
 
-def get_length_normalisation_denominator(utterance, alpha=20):
-    """ As done in Google's NMT paper. """
-    n = ((5 + len(utterance.split(" ")))**alpha)/((5+1)**alpha)
-    return n
+def get_length_normalisation_denominator(utterance, alpha=0.6):
+    """ As done in Google's NMT paper, who found optimal alpha to be between 0.6 and 0.7. """
+    return ((5 + len(utterance.split(" ")))**alpha)/((5+1)**alpha)
 
 def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
@@ -133,14 +119,16 @@ def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
     return beam, processed_mr_info, attention_plot
 
 def create_results(predicted_ids, results, training_info):
+    """ Create utterances from predicted ids """
     for i in range(len(predicted_ids)):
         idd = predicted_ids[i]
         utt = results[i]
+        # don't add anything if the utterance already has an end symbol
         if not utt.endswith(END_SYMBOL) and idd != 0:
             results[i] = (utt +  " " + training_info['ref_idx2word'][idd]).strip()
     return results
 
-def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
+def evaluate_with_sampling(encoder, decoder, mr_info, training_info, batch_size):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))
     processed_mr_info = preprocess_mr(mr_info)
     inputs = [training_info['mr_word2idx'][i.strip()] if i.strip() in training_info['mr_word2idx'] else 0 for i in processed_mr_info.split(' ')]
@@ -148,17 +136,15 @@ def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
                                                            maxlen=training_info['max_length_inp'],
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
-    inputs = tf.tile(inputs, tf.constant([beam_size, 1]))
-    hidden = encoder.initialize_hidden_state(beam_size)
+    inputs = tf.tile(inputs, tf.constant([batch_size, 1]))
+    hidden = encoder.initialize_hidden_state(batch_size)
     enc_out, forward_hidden, backward_hidden = encoder(inputs, hidden)
     dec_hidden = tf.keras.layers.Concatenate()([forward_hidden, backward_hidden])
     dec_input = tf.expand_dims([training_info['ref_word2idx'][START_SYMBOL]], 0)
-    dec_input = tf.tile(dec_input, tf.constant([beam_size, 1]))
-    results = ['']*beam_size
+    dec_input = tf.tile(dec_input, tf.constant([batch_size, 1]))
+    results = ['']*batch_size
     for t in range(training_info['max_length_targ']):
-        predictions, dec_hidden, attention_weights = decoder(dec_input,
-                                                             dec_hidden,
-                                                             enc_out)
+        predictions, dec_hidden, attention_weights = decoder(dec_input, dec_hidden, enc_out)
         pred_dist = tfp.distributions.Multinomial(total_count=1, logits=predictions)
         predicted_ids = tf.argmax(pred_dist.sample(1)[0], axis=1).numpy()
         results = create_results(predicted_ids, results, training_info)
@@ -166,7 +152,7 @@ def evaluate_with_sampling(encoder, decoder, mr_info, training_info, beam_size):
     return results, mr_info, attention_plot
 
 def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_size=1):
-    """ Generate new reference, and postprocess it to form a complete sentence."""
+    """ Generate new reference, and postprocess it to form a complete sentence using beam search."""
     beam, processed_mr_info, attention_plot = evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size)
     mr_slots = get_slots(mr_info, remove_whitespace=False)
     # postprocess and score the beam
@@ -180,8 +166,8 @@ def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam
     return beam[0].utterance
 
 def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
-    """ Generate new reference, and postprocess it to form a complete sentence."""
-    results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, 5)
+    """ Generate new reference, and postprocess it to form a complete sentence by sampling the next token from a probability distribution."""
+    results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, batch_size=10)
     mr_slots = get_slots(mr_info, remove_whitespace=False)
     scores = np.zeros(len(results))
     utterances = []
@@ -250,10 +236,10 @@ def calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_w
         if i % 500 == 0:
             print(generated)
             print(test_data['ref'].iloc[i])
-            print('mean bleu', np.mean(bleus))
+            print('mean bleu', np.mean(bleus[bleus > 0]))
     return np.mean(bleus), np.var(bleus)
 
-def main(test_data_file, checkpoint_dir, training_info_file, beam_search, sample_content, cpd_model_file):
+def main(test_data_file, checkpoint_dir, training_info_file, beam_width, sample_content, cpd_model_file):
     training_info = helpers.load_from_pickle(training_info_file)
     encoder = Encoder(len(training_info['mr_word2idx'])+1, 
                         training_info['embedding_dim'], 
@@ -270,7 +256,7 @@ def main(test_data_file, checkpoint_dir, training_info_file, beam_search, sample
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
     test_data = load_text_data(test_data_file)
-    #print_generations(test_data, encoder, decoder, training_info, beam_search, sample_content, cpd_model_file)
+    print_generations(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
     bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
     print(bleu_mean, bleu_var)
 
