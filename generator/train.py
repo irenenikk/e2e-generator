@@ -135,7 +135,7 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
     s = time.time()
     end_id = ref_word2idx['<end>']
     teacher_force_prob = 1
-    dev_data = load_text_data(dev_data_file, 200)
+    dev_data = load_text_data(dev_data_file, 100)
     val_bleus = []
     losses = []
     for epoch in range(epochs):
@@ -147,13 +147,12 @@ def train(data_file, dev_data_file, checkpoint_dir, training_info_file, restore_
             total_loss += batch_loss
             if batch % 100 == 0:
                 print('Epoch {} Batch {} Loss {:.4f}'.format(epoch + 1, batch, batch_loss))
-                losses.append(batch_loss)
             # run through validation set every 500 batch
             if (epoch*len(input_tensor)//BATCH_SIZE + batch) % 500 == 0:
-                pass
-                #val_bleu = calculate_mean_bleu_score(dev_data, encoder, decoder, training_info, beam_width=5, sample_content=False)
-                #print('Validation bleu score', val_bleu)
-                #val_bleus.append(val_bleu)
+                val_bleu = calculate_mean_bleu_score(dev_data, encoder, decoder, training_info, beam_width=5, sample_content=False)
+                print('Validation bleu score', val_bleu)
+                val_bleus.append(val_bleu)
+                losses.append(batch_loss)
         if not teacher_forcing and (epoch + 1) % 2 == 0:
             teacher_force_prob *= 0.9
         # save the model every 2 epochs
