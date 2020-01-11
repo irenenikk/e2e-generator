@@ -3,10 +3,11 @@ import nltk
 import argparse
 from data_preprocessing import build_slot_columns
 import pgmpy
-from pgmpy.estimators import ConstraintBasedEstimator, MaximumLikelihoodEstimator
+from pgmpy.estimators import ConstraintBasedEstimator, MaximumLikelihoodEstimator, HillClimbSearch
+from pgmpy.estimators import BdeuScore, K2Score, BicScore
 from pgmpy.models import BayesianModel
 from pgmpy.sampling import BayesianModelSampling
-from util import save_to_pickle
+from helpers import save_to_pickle
 
 parser = argparse.ArgumentParser(description='Analyse the probabilities of slots appearing from training data')
 parser.add_argument("training_data", type=str,
@@ -15,16 +16,16 @@ parser.add_argument("target_file", type=str, default='cpd_model.pkl',
                     help="Where to store the conditional probability tables created")
 
 def check_pairwise_independences(correlation_cols, est):
-    independent = []
-    dependent = []
+    independent = set()
+    dependent = set()
     for s1 in correlation_cols:
         for s2 in correlation_cols:
-            tupl = (s1, s2)
+            tupl = sorted((s1, s2))
             dep = est.test_conditional_independence(s1, s2)
             if dep:
-                dependent.append(tupl)
+                dependent.insert(tupl)
             else:
-                independent.append(tupl)
+                independent.insert(tupl)
             print(s1, 'and', s2, 'independence :', dep)
     return dependent, independent
 
@@ -43,8 +44,11 @@ def main(data_file, target_file):
     slot_data = data[correlation_cols]
     # build a model to infer underlying DAG
     # based on these examples: https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/9.%20Learning%20Bayesian%20Networks%20from%20Data.ipynb
-    est = ConstraintBasedEstimator(slot_data)
-    dag_edges = est.estimate(significance_level=0.01).edges()
+    print('Starting hill climb search')
+    hc = HillClimbSearch(slot_data, scoring_method=BicScore(slot_data))
+    best_model = hc.estimate()
+    dag_edges = best_model.edges()
+    print('Found the following edges', dag_edges)
     # create a new model to estimate conditional probability tables
     model = BayesianModel(dag_edges)
     print('Estimating conditional probability tables for each variable')
@@ -53,6 +57,10 @@ def main(data_file, target_file):
     for slot in correlation_cols:
         cpd = mle.estimate_cpd(slot)
         cpd_tables.append(cpd)
+    model_info = {}
+    model_info['edges'] = dag_edges
+    model_info['cpd_tables'] = cpd_tables
+    save_to_pickle(model_info, 'model_info.pkl')
     model.add_cpds(*cpd_tables)
     if not target_file.endswith('.pkl'):
         target_file += '.pkl'

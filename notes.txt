@@ -2,10 +2,12 @@ Original experiments before fixed beam search and data cleaning:
 With greedy search, BLEU score mean on development set is 0.5215228957738992 0.011869280059007385
 With sampling, BLEU score mean on development set is 0.48147223604600875 0.012254735080703794
 
-With a fixed beam search and uncleaned development data (there may be imbalance in slot order between training and inference):
+With beam search and uncleaned development data (there may be imbalance in slot order between training and inference):
 Using beam search, BLEU score mean is 0.4310298761439489 0.027333518296973367
 Using sampling, BLEU score mean is 0.5315435612053904 0.01615880422105561
 
+With new trained models
+Using beam search, BLEU score mean is 0.4092134426260842 0.020805945671198374
 
 Two utterances created by sampling from the same MRs:
 name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]
