@@ -36,7 +36,7 @@ def main(data_file, target_file):
     data = pd.concat([raw_data, slot_cols], axis=1)
     # don't calculate correlations for name
     correlation_cols = slot_cols.columns.drop(['name']).values
-    print('Detecting correlations between', correlation_cols)
+    print('Using the following slots in network', correlation_cols)
     for col in correlation_cols:
         not_present = data[col].isnull()
         data.loc[not_present, col] = 0
@@ -58,14 +58,13 @@ def main(data_file, target_file):
         cpd = mle.estimate_cpd(slot)
         cpd_tables.append(cpd)
     model_info = {}
-    model_info['edges'] = dag_edges
-    model_info['cpd_tables'] = cpd_tables
-    save_to_pickle(model_info, 'model_info.pkl')
     model.add_cpds(*cpd_tables)
     if not target_file.endswith('.pkl'):
         target_file += '.pkl'
     print('Storing the Bayesian network to', target_file)
-    save_to_pickle(model, target_file)
+    model_info['model'] = model
+    model_info['all_slots'] = correlation_cols
+    save_to_pickle(model_info, target_file)
 
 if __name__ == '__main__':
     args = parser.parse_args()

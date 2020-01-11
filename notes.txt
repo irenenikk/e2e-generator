@@ -24,3 +24,11 @@ name[Alimentum], area[city centre], familyFriendly[no], near[Burger King]
 Alimentum is a place for the whole being peaceful lunch . it is located near Burger King .
 Alimentum is not family-friendly, and is near the Burger King in the city centre.
 0.44228490161784506
+
+
+Content sampling examples from the devset:
+area[city_centre], customer rating[average], eatType[coffee_shop], familyFriendly[no], food[Chinese], name[Aromi]
+Sampled mr customer rating[average], eatType[coffee_shop], name[Aromi]
+Aromi is a coffee shop located on the outskirts of the city .
+Aromi is an average rated coffee shop that serves Chinese food in the city center
+bleu score for the best prediction 0.4509933654585574
