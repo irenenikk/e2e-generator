@@ -1,0 +1,128 @@
+Sampling content True
+Restoring checkpoint from training_checkpoints_tf_cleaned2
+Calculating mean BLEU score for validation set of size 4693
+0
+there is a cheap restaurant located in the city centre called Blue Spice . 
+A coffee shop in the city centre area called Blue Spice.
+mean bleu 0.541296688928912
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+Giraffe is not family-friendly . they provide french food near the city centre . 
+Giraffe is a French restaurant near the Raja Indian Cuisine that is not family-friendly and located in the city centre.
+mean bleu 0.35879289810005455
+550
+600
+650
+700
+750
+800
+850
+900
+950
+1000
+The Cricketers is a child friendly establishment near Avalon . 
+The Cricketers is a child friendly restaurant with a customer rating of 1 out of 5 located near Avalon.
+mean bleu 0.3729660286129322
+1050
+1100
+1150
+1200
+1250
+1300
+1350
+1400
+1450
+1500
+a child friendly toy with an average price range is less than 20 euros is The Cricketers . 
+A kid friendly restaurant named The Cricketers has opened near Café Rouge in the city centre. They serve English food, have an average customer rating, and high prices.
+mean bleu 0.37903073828474615
+1550
+1600
+1650
+1700
+1750
+1800
+1850
+1900
+1950
+2000
+The Mill is an english food , with a price range of £30 plus , and a restaurant that has a high customer rating . 
+The Mill is a high customer rating restaurant that is not children friendly. It's near the city centre and Café Rouge. The menu serves English food and is usually more £30, but it's worth it.
+mean bleu 0.3693420711631646
+2050
+2100
+2150
+2200
+2250
+2300
+2350
+2400
+2450
+2500
+The Phoenix is a fast food eatery providing meals less than £20 . it is located in the city centre . 
+The Phoenix is a nice restaurant with fast food service and lower prices than £ 20 are located in the city center area near Raja Indian Cuisine
+mean bleu 0.3653886669577295
+2550
+2600
+2650
+2700
+2750
+2800
+2850
+2900
+2950
+3000
+The Punter sells cheap prices 
+The Punter is a restaurant providing Indian food in the less than £20 price range. It is located in the riverside. It is near Express by Holiday Inn. Its customer rating is low.
+mean bleu 0.3633879112879252
+3050
+3100
+3150
+3200
+3250
+3300
+3350
+3400
+3450
+3500
+let can eat and enjoy japanese food at the The Vaults , it s no kids policy which is right in the riverside . its prices range from £20-25 . the food is sure to be . 
+there is a Japanese pub called The Vaults with a price range  of 20-25 pounds in Riverside near Raja Indian Cuisine
+mean bleu 0.3622644537099794
+3550
+3600
+3650
+3700
+3750
+3800
+3850
+3900
+3950
+4000
+The Waterman is a family friendly restaurant that serves italian food . 
+For a high priced restaurant serving Italian food with a children friendly environment, try The Waterman near Raja Indian Cuisine in the Riverside area.
+mean bleu 0.36163372851133235
+4050
+4100
+4150
+4200
+4250
+4300
+4350
+4400
+4450
+4500
+there s a pub named Wildwood near Raja Indian Cuisine , offering french food . 
+Wildwood is a French pub and kid friendly,  is located near Raja Indian Cuisine, in the riverside area.
+mean bleu 0.36096612091880603
+4550
+4600
+4650
+0.36076168817758003 0.022305777535519457

@@ -30,7 +30,7 @@ parser.add_argument("-b", "--beam-width", type=int, default=0,
                     help="Size of beam to use in generation. If not specified use sampling.")
 parser.add_argument("-s", "--sample-content", default=False, action="store_true",
                     help="Sample slots used in MR of utterance.")
-parser.add_argument("-cdp", "--cpd-model-file", default='cpd_model.pkl',
+parser.add_argument("-cpd", "--cpd-model-file", default='cpd_model.pkl',
                     help="Pickle file where the cpd model is stored")
 parser.add_argument("-p", "--print-utt", default=False, action="store_true",
                     help="Print generations for dataset before estimating bleu score")
@@ -168,7 +168,6 @@ def generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam
     return sorted_beam[0].utterance
 
 def generate_reference_with_sampling(encoder, decoder, mr_info, training_info):
-    print('Sampling')
     """ Generate new reference, and postprocess it to form a complete sentence by sampling the next token from a probability distribution."""
     results, processed_mr_info, attention_plot = evaluate_with_sampling(encoder, decoder, mr_info, training_info, batch_size=10)
     mr_slots = get_slots(mr_info, remove_whitespace=False)

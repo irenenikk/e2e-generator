@@ -1,0 +1,99 @@
+Using teacher forcing True
+Loading data
+Found input data of shape (42061, 16)
+Found target data of shape (42061, 74)
+Creating dataset
+Saving training information
+Saving training information to training_info_tf_uncleaned2.pkl
+Starting training
+Teacher forcing probability 1
+Teacher forcing probability 1
+Epoch 1 Batch 0 Loss 2.0916
+Epoch 1 Batch 100 Loss 1.0986
+Epoch 1 Batch 200 Loss 0.8769
+Epoch 1 Batch 300 Loss 0.7482
+Epoch 1 Batch 400 Loss 0.6879
+Epoch 1 Batch 500 Loss 0.6492
+Epoch 1 Batch 600 Loss 0.6205
+Epoch 1 Batch 700 Loss 0.4997
+Epoch 1 Batch 800 Loss 0.6542
+Epoch 1 Batch 900 Loss 0.5015
+Epoch 1 Batch 1000 Loss 0.4477
+Epoch 1 Loss 0.7037
+Time taken for 1 epoch 1024.6791656017303 sec
+
+Epoch 2 Batch 0 Loss 0.5538
+Epoch 2 Batch 100 Loss 0.5685
+Epoch 2 Batch 200 Loss 0.5568
+Epoch 2 Batch 300 Loss 0.4396
+Epoch 2 Batch 400 Loss 0.5774
+Epoch 2 Batch 500 Loss 0.4726
+Epoch 2 Batch 600 Loss 0.4999
+Epoch 2 Batch 700 Loss 0.5039
+Epoch 2 Batch 800 Loss 0.4157
+Epoch 2 Batch 900 Loss 0.3607
+Epoch 2 Batch 1000 Loss 0.4756
+Saving the model
+Epoch 2 Loss 0.4524
+Time taken for 1 epoch 895.275098323822 sec
+
+Epoch 3 Batch 0 Loss 0.3437
+Epoch 3 Batch 100 Loss 0.4279
+Epoch 3 Batch 200 Loss 0.3541
+Epoch 3 Batch 300 Loss 0.3900
+Epoch 3 Batch 400 Loss 0.4251
+Epoch 3 Batch 500 Loss 0.4644
+Epoch 3 Batch 600 Loss 0.4378
+Epoch 3 Batch 700 Loss 0.3767
+Epoch 3 Batch 800 Loss 0.3807
+Epoch 3 Batch 900 Loss 0.4249
+Epoch 3 Batch 1000 Loss 0.4342
+Epoch 3 Loss 0.4010
+Time taken for 1 epoch 894.6424381732941 sec
+
+Epoch 4 Batch 0 Loss 0.3143
+Epoch 4 Batch 100 Loss 0.3584
+Epoch 4 Batch 200 Loss 0.3973
+Epoch 4 Batch 300 Loss 0.3607
+Epoch 4 Batch 400 Loss 0.3197
+Epoch 4 Batch 500 Loss 0.3572
+Epoch 4 Batch 600 Loss 0.4025
+Epoch 4 Batch 700 Loss 0.3285
+Epoch 4 Batch 800 Loss 0.3138
+Epoch 4 Batch 900 Loss 0.4568
+Epoch 4 Batch 1000 Loss 0.3691
+Saving the model
+Epoch 4 Loss 0.3731
+Time taken for 1 epoch 895.0426504611969 sec
+
+Epoch 5 Batch 0 Loss 0.3102
+Epoch 5 Batch 100 Loss 0.3581
+Epoch 5 Batch 200 Loss 0.3497
+Epoch 5 Batch 300 Loss 0.3540
+Epoch 5 Batch 400 Loss 0.3427
+Epoch 5 Batch 500 Loss 0.3389
+Epoch 5 Batch 600 Loss 0.3913
+Epoch 5 Batch 700 Loss 0.3267
+Epoch 5 Batch 800 Loss 0.3344
+Epoch 5 Batch 900 Loss 0.3880
+Epoch 5 Batch 1000 Loss 0.3667
+Epoch 5 Loss 0.3499
+Time taken for 1 epoch 895.2070038318634 sec
+
+Epoch 6 Batch 0 Loss 0.3085
+Epoch 6 Batch 100 Loss 0.2955
+Epoch 6 Batch 200 Loss 0.2691
+Epoch 6 Batch 300 Loss 0.3291
+Epoch 6 Batch 400 Loss 0.3208
+Epoch 6 Batch 500 Loss 0.3077
+Epoch 6 Batch 600 Loss 0.2911
+Epoch 6 Batch 700 Loss 0.3342
+Epoch 6 Batch 800 Loss 0.3832
+Epoch 6 Batch 900 Loss 0.3436
+Epoch 6 Batch 1000 Loss 0.3497
+Saving the model
+Epoch 6 Loss 0.3273
+Time taken for 1 epoch 894.2753903865814 sec
+
+Training took 91.86040552457173 minutes
+Saving metrics from 66 batches to val_metrics_tf_uncleaned2
