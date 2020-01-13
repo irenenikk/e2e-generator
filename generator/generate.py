@@ -72,8 +72,10 @@ def score_prediction(prediction, mr_slots):
         The score function is taken from Juraska et al.
     """
     N = len(mr_slots.keys())
+    # remove the whitespace placeholders
+    orig_mr_slots = { k.replace(' ', ''): v.replace('_', ' ') for k, v in mr_slots.items() }
     # use Juraska's code to get erronous slots
-    unaligned_slots, hallucinated_slots = get_unaligned_and_hallucinated_slots(prediction, mr_slots)
+    unaligned_slots, hallucinated_slots = get_unaligned_and_hallucinated_slots(prediction, orig_mr_slots)
     score = N/((len(unaligned_slots)+1)*(len(hallucinated_slots)+1))
     return score
 
