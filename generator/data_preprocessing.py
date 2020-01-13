@@ -68,7 +68,7 @@ def build_slot_columns(data, remove_whitespace=True):
     # ensure that the order stays the same by sorting
     # a seq2seq model expects structure in input
     # this same method is used to load training and test data
-    all_slots = sorted(list(set([key for d in slot_infos for key in d.keys()])))
+    all_slots = set([key for d in slot_infos for key in d.keys()])
     # create a new pandas dataframe of interesting columns
     mr_slots = {}
     for slot in all_slots:

@@ -29,3 +29,29 @@ From token sampling:
 
 Giraffe is not family-friendly . they provide french food near the city centre . 
 Giraffe is a French restaurant near the Raja Indian Cuisine that is not family-friendly and located in the city centre.
+
+Difficult alignments in training data:
+mr: name[The Wrestlers], food[English], priceRange[cheap], customer rating[5 out of 5], familyFriendly[yes]
+utterance: The Wrestlers, a 5-star, family-friendly restaurant serves local food at low prices.
+err: 1
+incorrect slots: food
+mr: name[The Wrestlers], eatType[coffee shop], food[French], priceRange[more than £30], area[city centre], familyFriendly[yes], near[Raja Indian Cuisine]
+utterance: The Wrestlers in a French restaurant near Raja Indian Cuisine in the city centre area. It is a coffee shop with a price range is more than 30.
+err: 2
+incorrect slots: pricerange, familyfriendly
+mr: name[Alimentum], food[Japanese], priceRange[£20-25], customer rating[high], area[riverside], near[Yippee Noodle Bar]
+utterance: We are a Japanese restaurant called Alimentum and can be found in the Riverside area of Cambridge, near to the Yippee Noodle Bar.  Our customer rating is high and our average price for a meal is £20-25.  Please come and see what we are all about.
+mr: name[Fitzbillies], eatType[coffee shop], food[Italian], priceRange[high], customer rating[average], area[city centre], familyFriendly[yes]
+utterance: Fitzbillies is a child friendly Italian coffee shop in the city centre - just don't forget your wallet.
+err: 2
+incorrect slots: pricerange, customerrating
+mr: name[The Eagle], eatType[coffee shop], food[Italian], priceRange[£20-25], customer rating[high], area[city centre], familyFriendly[yes], near[Burger King]
+utterance: The Eagle is a children friendly coffee ship in the city centre near Burger King.  It serves Italian food for £20-25 and has a high customer rating.
+err: 1
+incorrect slots: eattype
+
+BLEU score as a bad metric:
+area[riverside], familyFriendly[no], name[Alimentum]
+Alimentum is in the riverside area . it is not family-friendly .
+Alimentum, located on the river. No good for families.
+bleu score for the best prediction 0.39169810229626073

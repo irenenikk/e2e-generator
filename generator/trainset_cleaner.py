@@ -1,3 +1,5 @@
+####### PLEASE RUN THIS IN THE SLUG2SLUG FOLDER TO USE THEIR MODULES #######
+
 import pandas as pd
 import argparse
 from slug2slug.slot_aligner.data_analysis import score_slot_realizations
@@ -11,6 +13,8 @@ parser.add_argument("training_data_file", type=str, default='trainset.csv',
                     help="The name of the training data file to be cleaned")
 parser.add_argument("-i", "--ignore-old", default=False, action='store_true',
                     help="Redo error analysis even if old analysis file is found")
+
+slot_column_order = ['name', 'eatType', 'food', 'priceRange', 'customer rating', 'area', 'familyFriendly', 'near']
 
 def main(folder_name, filename, ignore_old):
     # use slug2slug to analyse which slots are present
@@ -42,7 +46,7 @@ def main(folder_name, filename, ignore_old):
     comb_data = comb_data[column_order]
     print('Cleaned slots from', len(erronous_indices), 'instances')
     # reconstruct the slot column data frame with the cleaned values
-    new_mr = reconstruct_mr(comb_data, slot_column_data.columns)
+    new_mr = reconstruct_mr(comb_data, slot_column_order)
     comb_data['new_mr'] = new_mr
     cleaned_data = comb_data[~(comb_data['new_mr'] == '')]
     cleaned_data = cleaned_data[['new_mr', 'ref']]

@@ -74,15 +74,17 @@ def score_prediction(prediction, mr_slots):
     N = len(mr_slots.keys())
     # use Juraska's code to get erronous slots
     unaligned_slots, hallucinated_slots = get_unaligned_and_hallucinated_slots(prediction, mr_slots)
-    return N/((len(unaligned_slots)+1)*(len(hallucinated_slots)+1))
+    score = N/((len(unaligned_slots)+1)*(len(hallucinated_slots)+1))
+    return score
 
 def generation_done(beam_obj, training_info, end_token):
     """ Stop when end token is reached or the sentence is the maximal length. """
     return beam_obj.last_id == end_token or len(beam_obj.utterance) == training_info['max_length_targ']
 
-def get_length_normalisation_denominator(utterance, alpha=0.7):
+def get_length_normalisation_denominator(utterance, alpha=0.9):
     """ As done in Google's NMT paper, who found optimal alpha to be between 0.6 and 0.7. """
-    return ((5 + len(utterance.split(" ")))**alpha)/((5+1)**alpha)
+    utt_len = len(utterance.split(" "))
+    return ((5 + utt_len)**alpha)/((5+1)**alpha)
 
 def evaluate_with_beam(encoder, decoder, mr_info, training_info, beam_size):
     attention_plot = np.zeros((training_info['max_length_targ'], training_info['max_length_inp']))

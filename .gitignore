@@ -5,3 +5,4 @@ tensorflow-tutorial/
 *.idea
 *__pycache__*
 .DS_Store
+bleu_score*.txt

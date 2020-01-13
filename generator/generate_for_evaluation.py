@@ -50,18 +50,20 @@ if __name__ == "__main__":
     model_output_file = open(model_output_filename,"w+")
     for i in range(len(test_data)):
         mr_input = test_data['mr'].iloc[i]
+        reference = test_data['ref'].iloc[i]
+        references_file.write(reference + '\n')
         if mr_input != prev_mr_info:
             # write new line to the model file
+            mr_info = ''
+            if sample_content:
+                mr_info = sample_mr_content(mr_input, cpd_model_file)
+            else:
+                mr_info = mr_input
+            generated = ''
+            if beam_width > 0:
+                generated = generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_width)
+            else:
+                generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
+            model_output_file.write(generated + '\n')
             references_file.write('\n')
-        mr_info = ''
-        if sample_content:
-            mr_info = sample_mr_content(mr_input, cpd_model_file)
-        else:
-            mr_info = mr_input
         prev_mr_info = mr_input
-        generated = ''
-        if beam_width > 0:
-            generated = generate_reference_using_beam(encoder, decoder, mr_info, training_info, beam_width)
-        else:
-            generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
-        model_output_file.write(generated)
