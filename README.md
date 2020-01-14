@@ -42,11 +42,11 @@ The model identifier must be unique as it is used to store the training checkpoi
 
 Parameters:
 
-- Only use a subset of the training data with `-num`.
+- Only use a subset of the training data with `-num`.
 
 - Specify the amount of epochs with `-e` (defaults to 5).
 
-- Disable teacher forcing with `-tf`.
+- Disable teacher forcing with `-tf`.
 
 - Recover training from a checkpoint with the same id: `-r`.
 
@@ -75,7 +75,7 @@ Parameters:
 $ python generator/trainset_analysis.py rest_e2e/trainset.csv 
 ```
 
-Model will be stored as a pickle to the desired path, defaulting to `cpd_model.pkl`.
+Model will be stored as a pickle to the desired path, defaulting to `cpd_model.pkl`.
 
 ## Creating cleaned training set
 
@@ -83,7 +83,7 @@ Model will be stored as a pickle to the desired path, defaulting to `cpd_model.p
 $ python generator/trainset_cleaner.py rest_e2e/ trainset.csv
 ```
 
-The cleaned dataset will be stored with the suffix `_cleaned`
+The cleaned dataset will be stored with the suffix `_cleaned`
 
 Parameters:
 - Force redoing analysis even if old one is found: `-i`.
