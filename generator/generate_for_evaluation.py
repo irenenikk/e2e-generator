@@ -25,8 +25,8 @@ if __name__ == "__main__":
     beam_width = args.beam_width
     checkpoint_dir = 'training_checkpoints' + identifier
     training_info_file = 'training_info' + identifier + '.pkl'
-    references_filename = 'references_beam_' + beam_width + '_' + identifier + '.txt'
-    model_output_filename = 'model_output_beam_' + beam_width + '_' + identifier + '.txt'
+    references_filename = 'references_beam_' + str(beam_width) + '_' + identifier + '.txt'
+    model_output_filename = 'model_output_beam_' + str(beam_width) + '_' + identifier + '.txt'
     sample_content = args.sample_content
     print('Sampling content', sample_content)
     cpd_model_file = args.cpd_model_file
