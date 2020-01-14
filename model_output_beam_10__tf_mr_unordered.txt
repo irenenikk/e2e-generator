@@ -1,0 +1,109 @@
+Blue Spice is a riverside coffee shop near near_place . 
+Blue Spice is a 5 star rated coffee shop situated near Crowne Plaza Hotel . 
+Blue Spice is a 3-star coffee shop near Burger King . 
+Blue Spice is a 3-star coffee shop near Crowne Plaza Hotel . 
+Blue Spice pub in the city centre near near_place . 
+near near_place in the riverside area is a pub called Blue Spice . 
+Blue Spice is a 5 out of 5 rated pub near Crowne Plaza Hotel . 
+Blue Spice pub near Burger King has an average customer rating . 
+Blue Spice pub near Crowne Plaza Hotel has an average customer rating . 
+there is a non-family friendly chinese pub in the city centre called Blue Spice . 
+Blue Spice is a family friendly pub that serves chinese food in the city centre . 
+Blue Spice is a chinese pub in the riverside area that is not family friendly . 
+a chinese pub called Blue Spice is located in riverside and is kid friendly . 
+the Blue Spice is a non-family-friendly english pub located near the city centre . 
+Blue Spice is an english pub that is family-friendly and located in the city centre . 
+Blue Spice is an adult only english pub located near the riverside . 
+Blue Spice is a family friendly english pub in the riverside area . 
+Blue Spice is an adult only chinese restaurant in the city centre . 
+Blue Spice is a family friendly chinese restaurant in the city centre . 
+Blue Spice is a non-family friendly chinese restaurant in the riverside area . 
+a family friendly chinese restaurant in the riverside area is Blue Spice .
+Blue Spice is an adult only english restaurant located in the city centre . 
+Blue Spice is an english restaurant in the city centre that is family-friendly . 
+Blue Spice is an english restaurant located in riverside . it is not family-friendly . 
+Blue Spice is a family friendly english restaurant in the riverside area .
+Clowns is a 3 out of 5 star coffee shop near All Bar One . 
+Clowns is a 5 star rated coffee shop situated near Crowne Plaza Hotel . 
+near The Sorrento in the city centre , there is a coffee shop called Clowns . 
+Clowns is a 3 out of 5 pub near All Bar One . 
+Clowns is a 5 out of 5 rated pub near Crowne Plaza Hotel . 
+close to The Sorrento is a pub called Clowns . 
+Cocum is a highly rated coffee shop near Burger King . 
+Cocum is a highly rated coffee shop near Café Sicilia . 
+Cocum is a low-rated coffee shop near Café Sicilia . 
+Cocum is a low-rated coffee shop near Express by Holiday Inn . 
+near The Rice Boat in the city centre , there is a coffee shop called Cocum . 
+near The Sorrento in the city centre , there is a coffee shop called Cocum . 
+Cocum is a highly rated pub near Burger King . 
+Cocum is a highly rated pub near Café Sicilia . 
+Cocum pub near Café Sicilia has a low customer rating . 
+Cocum pub near Express by Holiday Inn has a low customer rating . 
+close to The Rice Boat is a pub called Cocum . 
+close to The Sorrento is a pub called Cocum . 
+near The Bakers in the city centre , there is a coffee shop called Cotto . 
+close to The Bakers is a pub called Cotto . 
+near The Bakers in the city centre , there is a coffee shop called Giraffe . 
+near The Rice Boat in the city centre , there is a coffee shop called Giraffe . 
+Giraffe is a family friendly english pub in the riverside area . 
+Giraffe is a non-family-friendly fast food pub in the city centre . 
+Giraffe is a family-friendly pub that serves fast food in the city centre . 
+Giraffe is a fast food pub located in riverside . it is not family-friendly . 
+Giraffe is a fast food pub in riverside that is child friendly . 
+Giraffe is a fast food pub in riverside that is child friendly . 
+Giraffe is a non-family-friendly pub that serves french food . it is located in the city centre . 
+in the city centre is a family-friendly french pub called Giraffe . 
+Giraffe is a french pub located in riverside . it is not family-friendly . 
+Giraffe is a family friendly pub that serves french food in the riverside area . 
+close to The Bakers is a pub called Giraffe . 
+close to The Rice Boat is a pub called Giraffe . 
+Giraffe is a family friendly english restaurant in the riverside area .
+Giraffe is a non-family-friendly fast food restaurant in the city centre . 
+Giraffe is a family-friendly fast food restaurant in the city centre . 
+Giraffe is a riverside restaurant that serves fast food . it is not family-friendly . 
+Giraffe in riverside is a family friendly restaurant that serves fast food . 
+Giraffe in riverside is a family friendly restaurant that serves fast food . 
+the Giraffe is a non-family-friendly french restaurant in the city centre . 
+Giraffe is a family-friendly french restaurant in the city centre . 
+Giraffe is a non family-friendly french restaurant in the riverside area . 
+a family friendly french restaurant in the riverside area is Giraffe . 
+Green Man , a coffee shop , is located near All Bar One and has a customer
+Green Man is a 3 out of 5 star coffee shop near All Bar One . 
+Green Man is a pub near All Bar One . it has a customer rating of 1 out of
+Green Man is a 3 out of 5 pub near All Bar One . 
+Green Man is an italian pub located in riverside . it is kid friendly . 
+Green Man is an italian pub located in riverside . it is kid friendly . 
+Green Man is an adult pub serving japanese food located in the city centre . 
+Green Man is a family-friendly pub serving japanese food located in the city centre . 
+Green Man is an adult pub located in the riverside area . it serves japanese food . 
+the Green Man is a family friendly japanese pub in the riverside area . 
+the Green Man is a family friendly restaurant in the riverside area that serves italian food . 
+the Green Man is a family friendly restaurant in the riverside area that serves italian food . 
+Green Man is a non-family-friendly japanese restaurant in the city centre
+Green Man is a family-friendly japanese restaurant in the city centre . 
+Green Man is a riverside japanese restaurant that is not family-friendly . 
+Green Man is a child-friendly japanese restaurant in riverside . 
+Loch Fyne is a riverside coffee shop near near_place . 
+near near_place in the riverside area is a pub called Loch Fyne . 
+Strada is a cheap coffee shop in the city centre near near_place . 
+Strada , a coffee shop , is located near All Bar One and has a customer
+with a 1 out of 5 rating , Strada is a coffee shop near Rainbow Vegetarian Café . 
+Strada is a low-rated coffee shop near Express by Holiday Inn . 
+Strada pub in the city centre near near_place . 
+Strada is a pub near All Bar One . it has a customer rating of 1 out of
+Strada is a pub near Rainbow Vegetarian Café . it has a customer rating of 1 out of
+Strada pub near Express by Holiday Inn has a low customer rating . 
+The Cricketers is a kid friendly coffee shop near Avalon with a customer rating of 1 out of 5 . 
+The Cricketers is a kid friendly coffee shop near Avalon with a customer rating of 3 out of 5 . 
+The Cricketers is a kid friendly coffee shop near Crowne Plaza Hotel with a customer rating of 3 out of 5 . 
+The Cricketers is a 5 star coffee shop near Crowne Plaza Hotel that is not family-friendly . 
+The Cricketers is a child friendly coffee shop near Crowne Plaza Hotel with a 5 out of
+The Cricketers is an average coffee shop near Café Sicilia that is not family-friendly . 
+The Cricketers is an average coffee shop near Crowne Plaza Hotel that is not family-friendly . 
+The Cricketers is a children friendly coffee shop near Café Sicilia with average
+The Cricketers is a kid friendly coffee shop with a high customer rating near Café Sicilia . 
+The Cricketers is a kid friendly coffee shop with a high customer rating near Express by Holiday Inn . 
+The Cricketers coffee shop near Express by Holiday Inn has a low customer rating and is not family-friendly . 
+The Cricketers coffee shop near Ranch has a low customer rating and is not family-friendly . 
+a family friendly coffee shop near Ranch is The Cricketers . it has a low
+a kid friendly restaurant , The Cricketers has a customer rating of 1 out of 5
