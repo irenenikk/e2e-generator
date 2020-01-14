@@ -44,7 +44,8 @@ if __name__ == "__main__":
                                     decoder=decoder)
     print('Restoring checkpoint from', checkpoint_dir)
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
-    test_data = load_text_data(test_data_file, 2000)
+    test_data = load_text_data(test_data_file)
+    test_data = test_data.head(1000)
     prev_mr_info = test_data['mr'].iloc[0]
     references_file = open(references_filename,"w+")
     model_output_file = open(model_output_filename,"w+")
