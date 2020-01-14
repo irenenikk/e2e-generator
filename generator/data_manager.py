@@ -32,7 +32,7 @@ def load_text_data(data_file, num_examples=None):
     new_mr = reconstruct_mr(data, data_columns.columns)
     data['mr'] = new_mr
     if num_examples is not None:
-        return data.sample(num_examples)
+        return data.sample(num_examples, random_state=0)
     return data
 
 def tiny_analysis(data):

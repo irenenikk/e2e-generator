@@ -55,3 +55,29 @@ area[riverside], familyFriendly[no], name[Alimentum]
 Alimentum is in the riverside area . it is not family-friendly .
 Alimentum, located on the river. No good for families.
 bleu score for the best prediction 0.39169810229626073
+
+Beam search from uncleaned data:
+-------------------------
+name[Blue_Spice], eatType[coffee_shop], area[riverside]
+Blue Spice is a cheap coffee shop near near_place .
+At the riverside, there is a coffee shop called The Blue Spice.
+bleu score for the best prediction 0.46983086860839834
+-------------------------
+name[Blue_Spice], eatType[coffee_shop], near[Crowne_Plaza_Hotel], customer rating[5_out_of_5]
+near Crowne Plaza Hotel is a coffee shop called Blue Spice . it has a customer rating of 5 out of 5 .
+The coffee shop Blue Spice is based near Crowne Plaza Hotel and has a high customer rating of 5 out of 5.
+bleu score for the best prediction 0.8000885572857938
+
+Why beam search gets a low BLEU:
+The Punter is an italian restaurant with a price range of 20-25 pounds .
+The Punter is a kids friendly restaurant in Riverside near Express by Holiday Inn that serves Italian food for £20-25. It has a high customer rating.
+mean bleu 0.21087381973335495
+
+#### NEW RESULTS #####
+
+Beam with no content sampling and uncleaned data
+0.488996919492496 0.016417432470891648
+
+Beam with no content sampling and cleaned data
+
+Beam with content sampling and cleaned data

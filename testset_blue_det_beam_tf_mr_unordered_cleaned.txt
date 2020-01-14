@@ -1,10 +1,12 @@
 Sampling content False
-Restoring checkpoint from training_checkpoints_tf_mr_unordered
-Calculating mean BLEU score for validation set of size 4693
+Restoring checkpoint from training_checkpoints_tf_mr_unordered_cleaned
+Sampling content False
+Restoring checkpoint from training_checkpoints_tf_mr_unordered_cleaned
+Calculating mean BLEU score for validation set of size 2000
 0
-Blue Spice is a cheap coffee shop near near_place . 
-A coffee shop in the city centre area called Blue Spice.
-mean bleu 0.4839577420031444
+The Wrestlers is a non family-friendly restaurant that is located in the center of the city . it serves japanese food at the price range of more than £30 . 
+The Wrestlers is located near Raja Indian Cuisine in the city centre. It is a Japanese restaurant with a price range of more than £30 and is not kid-friendly.
+mean bleu 0.6786646752825333
 50
 100
 150
@@ -15,9 +17,9 @@ mean bleu 0.4839577420031444
 400
 450
 500
-Giraffe is a french restaurant with a moderate price range . it is located near Raja Indian Cuisine . 
-Giraffe is a French restaurant near the Raja Indian Cuisine that is not family-friendly and located in the city centre.
-mean bleu 0.5113282380409218
+The Waterman is located in the city centre , it is a cheap restaurant that serves indian food . it is located near Raja Indian Cuisine and is not family friendly . 
+There's a non family friendly Indian restaurant called The Waterman near Raja Indian Cuisine in the city center for less than £20.
+mean bleu 0.4831096817102609
 550
 600
 650
@@ -28,9 +30,9 @@ mean bleu 0.5113282380409218
 900
 950
 1000
-The Cricketers is a kid friendly restaurant with a moderate price range . it is located near Avalon . it has a customer rating of 1 out of 5 . 
-The Cricketers is a child friendly restaurant with a customer rating of 1 out of 5 located near Avalon.
-mean bleu 0.5113313688024935
+a kid friendly restaurant in the city centre called The Mill has a moderate price range . 
+Serving moderately priced English food with a 3 out of 5 customer approval, The Mill restaurant is kid friendly and conveniently  located at the city centre near the Café Rouge.
+mean bleu 0.48098179853728096
 1050
 1100
 1150
@@ -41,9 +43,9 @@ mean bleu 0.5113313688024935
 1400
 1450
 1500
-The Cricketers is located near Café Rouge and is a moderately priced english restaurant with a average rating . 
-A kid friendly restaurant named The Cricketers has opened near Café Rouge in the city centre. They serve English food, have an average customer rating, and high prices.
-mean bleu 0.5127718598805304
+The Waterman is an indian food restaurant that is children friendly and located in riverside . it costs more than £30 . 
+There is an above average priced restaurant called The Waterman, located near Raja Indian Cuisine in riverside. The venue is child friendly.
+mean bleu 0.47883237369096965
 1550
 1600
 1650
@@ -53,76 +55,4 @@ mean bleu 0.5127718598805304
 1850
 1900
 1950
-2000
-The Mill is a restaurant providing english food in the high price range . it is located in the city centre . 
-The Mill is a high customer rating restaurant that is not children friendly. It's near the city centre and Café Rouge. The menu serves English food and is usually more £30, but it's worth it.
-mean bleu 0.4947457076942055
-2050
-2100
-2150
-2200
-2250
-2300
-2350
-2400
-2450
-2500
-The Phoenix is a restaurant that serves fast food . it is located in the city centre . it is a moderately priced restaurant that is not child friendly . 
-The Phoenix is a nice restaurant with fast food service and lower prices than £ 20 are located in the city center area near Raja Indian Cuisine
-mean bleu 0.4848389169671752
-2550
-2600
-2650
-2700
-2750
-2800
-2850
-2900
-2950
-3000
-The Punter is an indian restaurant with a low price range . it has a low customer rating and is not kid friendly . 
-The Punter is a restaurant providing Indian food in the less than £20 price range. It is located in the riverside. It is near Express by Holiday Inn. Its customer rating is low.
-mean bleu 0.48679286175946296
-3050
-3100
-3150
-3200
-3250
-3300
-3350
-3400
-3450
-3500
-The Vaults is a pub serving japanese food . it is located near the Raja Indian Cuisine . the prices are high and it has a high customer rating . 
-there is a Japanese pub called The Vaults with a price range  of 20-25 pounds in Riverside near Raja Indian Cuisine
-mean bleu 0.48542087386752464
-3550
-3600
-3650
-3700
-3750
-3800
-3850
-3900
-3950
-4000
-The Waterman is an expensive restaurant that serves italian food . it is located near Raja Indian Cuisine . 
-For a high priced restaurant serving Italian food with a children friendly environment, try The Waterman near Raja Indian Cuisine in the Riverside area.
-mean bleu 0.4891863889174838
-4050
-4100
-4150
-4200
-4250
-4300
-4350
-4400
-4450
-4500
-located near Raja Indian Cuisine is a french pub named Wildwood with a moderate price range . 
-Wildwood is a French pub and kid friendly,  is located near Raja Indian Cuisine, in the riverside area.
-mean bleu 0.4894067244387734
-4550
-4600
-4650
-0.488996919492496 0.016417432470891648
+0.4786972954144835 0.018545266053067187

@@ -262,7 +262,7 @@ def main(test_data_file, checkpoint_dir, training_info_file, beam_width, sample_
     print('Restoring checkpoint from', checkpoint_dir)
     checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
     # get test data
-    test_data = load_text_data(test_data_file)
+    test_data = load_text_data(test_data_file, 2000)
     if print_utt:
         print_generations(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
     bleu_mean, bleu_var = calculate_mean_bleu_score(test_data, encoder, decoder, training_info, beam_width, sample_content, cpd_model_file)
