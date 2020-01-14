@@ -6,3 +6,4 @@ tensorflow-tutorial/
 *__pycache__*
 .DS_Store
 bleu_score*.txt
+e2e-metrics*

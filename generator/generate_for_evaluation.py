@@ -49,11 +49,12 @@ if __name__ == "__main__":
     prev_mr_info = test_data['mr'].iloc[0]
     references_file = open(references_filename,"w+")
     model_output_file = open(model_output_filename,"w+")
+    first = True
     for i in range(len(test_data)):
         mr_input = test_data['mr'].iloc[i]
         reference = test_data['ref'].iloc[i]
-        references_file.write(reference + '\n')
-        if mr_input != prev_mr_info:
+        if mr_input != prev_mr_info or first:
+            first = False
             # write new line to the model file
             mr_info = ''
             if sample_content:
@@ -67,4 +68,5 @@ if __name__ == "__main__":
                 generated = generate_reference_with_sampling(encoder, decoder, mr_info, training_info)
             model_output_file.write(generated + '\n')
             references_file.write('\n')
+        references_file.write(reference + '\n')
         prev_mr_info = mr_input
