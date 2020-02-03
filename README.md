@@ -19,8 +19,8 @@ Check the requirements file. Note that the project uses Tensorflow 2.0.
 The repository consists of three components:
 
 - Seq2Seq neural network system used to generate utterances from MR slot information.
-- A module that learns a Bayesian network for binary variables from data, and samples from the joint distribution.
-- A module that creates a new training dataset by removing unrealised slots from the input slot description.
+- A module that learns a Bayesian network for binary variables from data, and samples from the joint distribution. This module will be used in content selection, i.e. when choosing which slots to include when generating new utterances.
+- A module that creates a new training dataset by removing unrealised slots from the input slot description. This is a data augmentation step used in the content selection task.
 
 You can find the model code for the encoder, decoder and the attention module from `generator/models.py`.
 
@@ -86,5 +86,4 @@ $ python generator/trainset_cleaner.py rest_e2e/ trainset.csv
 The cleaned dataset will be stored with the suffix `_cleaned`
 
 Parameters:
-- Force redoing analysis even if old one is found: `-i`.
-
+- Force redoing analysis even if old analysis file is found: `-i`.
